@@ -1,18 +1,15 @@
 plugins {
     kotlin("multiplatform")
-    id("com.android.library")
+    id("java-library")
 }
 
 kotlin {
-    android {
+    jvm {
         compilations.all {
-            kotlinOptions {
-                jvmTarget = "1.8"
-            }
+            kotlinOptions.jvmTarget = "17"
         }
+        withJava()
     }
-
-    jvm()
 
     listOf(
         iosX64(),
@@ -31,12 +28,12 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
-        val androidMain by getting {
+        val jvmMain by getting {
             dependencies {
                 implementation("org.bouncycastle:bcprov-jdk18on:1.74")
             }
         }
-        val androidUnitTest by getting
+        val jvmTest by getting
         val iosX64Main by getting
         val iosArm64Main by getting
         val iosSimulatorArm64Main by getting
@@ -55,13 +52,5 @@ kotlin {
             iosArm64Test.dependsOn(this)
             iosSimulatorArm64Test.dependsOn(this)
         }
-    }
-}
-
-android {
-    namespace = "studio.lunabee.doubleratchet"
-    compileSdk = 33
-    defaultConfig {
-        minSdk = 24
     }
 }
