@@ -1,4 +1,4 @@
-package studio.lunabee.doubleratchet.crypto
+package studio.lunabee.doubleratchet
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.NoSuchAlgorithmException

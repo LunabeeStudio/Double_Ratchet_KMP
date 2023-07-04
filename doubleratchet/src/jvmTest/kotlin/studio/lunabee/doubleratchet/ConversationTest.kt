@@ -1,15 +1,19 @@
 package studio.lunabee.doubleratchet
 
+import kotlinx.coroutines.test.TestResult
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import studio.lunabee.doubleratchet.crypto.CryptoRepositoryImpl
+import studio.lunabee.doubleratchet.model.DoubleRatchetError
 import studio.lunabee.doubleratchet.model.InvitationData
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
-class AndroidGreetingTest {
+class ConversationTest {
 
     @Test
-    fun testDiffieHellman() {
-        val cryptoRepository1 = CryptoRepositoryImpl()
-        val cryptoRepository2 = CryptoRepositoryImpl()
+    fun testDiffieHellman(): TestResult = runTest {
+        val cryptoRepository1 = DoubleRatchetCryptoRepositoryImpl()
+        val cryptoRepository2 = DoubleRatchetCryptoRepositoryImpl()
         val keyPairAlice = cryptoRepository1.generateKeyPair()
         val keyPairBob = cryptoRepository2.generateKeyPair()
 
@@ -19,9 +23,9 @@ class AndroidGreetingTest {
     }
 
     @Test
-    fun testDerivationFunction() {
-        val cryptoRepository1 = CryptoRepositoryImpl()
-        val cryptoRepository2 = CryptoRepositoryImpl()
+    fun testDerivationFunction(): TestResult = runTest {
+        val cryptoRepository1 = DoubleRatchetCryptoRepositoryImpl()
+        val cryptoRepository2 = DoubleRatchetCryptoRepositoryImpl()
         val chainKey = cryptoRepository1.generateChainKey()
         val value1 = cryptoRepository1.deriveKey(chainKey)
         val value2 = cryptoRepository2.deriveKey(chainKey)
@@ -30,9 +34,9 @@ class AndroidGreetingTest {
     }
 
     @Test
-    fun testDerivationWithDHFunction() {
-        val cryptoRepository1 = CryptoRepositoryImpl()
-        val cryptoRepository2 = CryptoRepositoryImpl()
+    fun testDerivationWithDHFunction(): TestResult = runTest {
+        val cryptoRepository1 = DoubleRatchetCryptoRepositoryImpl()
+        val cryptoRepository2 = DoubleRatchetCryptoRepositoryImpl()
         val chainKey = cryptoRepository1.generateChainKey()
         val chainKey2 = cryptoRepository2.generateChainKey()
 
@@ -43,9 +47,57 @@ class AndroidGreetingTest {
     }
 
     @Test
-    fun handShakeTest() {
-        val engineAlice = DoubleRatchetEngine(cryptoRepository = CryptoRepositoryImpl())
-        val engineBob = DoubleRatchetEngine(cryptoRepository = CryptoRepositoryImpl())
+    fun testConversation(): TestResult = runTest {
+        val engineAlice = DoubleRatchetEngine(
+            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
+            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+        )
+        val engineBob = DoubleRatchetEngine(
+            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
+            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+        )
+        val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
+        val aliceToBobConversationId: String = engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
+        val error = assertFailsWith(DoubleRatchetError::class) {
+            engineBob.getSendData(conversationId = bobToAliceInvitation.conversationId)
+        }
+        assertEquals(DoubleRatchetError.Type.ConversationNotSetup, error.type)
+        val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
+        val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
+        assert(aliceMessage1.messageKey.contentEquals(receivedBob1))
+    }
+
+    @Test
+    fun tryToDecodeAlreadyDecodedMessage(): TestResult = runTest {
+        val engineAlice = DoubleRatchetEngine(
+            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
+            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+        )
+        val engineBob = DoubleRatchetEngine(
+            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
+            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+        )
+        val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
+        val aliceToBobConversationId: String = engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
+        val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
+        val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
+        assert(aliceMessage1.messageKey.contentEquals(receivedBob1))
+        val receivedBis = assertFailsWith(DoubleRatchetError::class) {
+            engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
+        }
+        assertEquals(DoubleRatchetError.Type.MessageKeyNotFound, receivedBis.type)
+    }
+
+    @Test
+    fun handShakeTest(): TestResult = runTest {
+        val engineAlice = DoubleRatchetEngine(
+            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
+            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+        )
+        val engineBob = DoubleRatchetEngine(
+            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
+            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+        )
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
         val aliceToBobConversationId: String = engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
@@ -66,9 +118,15 @@ class AndroidGreetingTest {
     }
 
     @Test
-    fun outOfOrderTest() {
-        val engineAlice = DoubleRatchetEngine(cryptoRepository = CryptoRepositoryImpl())
-        val engineBob = DoubleRatchetEngine(cryptoRepository = CryptoRepositoryImpl())
+    fun outOfOrderTest(): TestResult = runTest {
+        val engineAlice = DoubleRatchetEngine(
+            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
+            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+        )
+        val engineBob = DoubleRatchetEngine(
+            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
+            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+        )
 
         // Bob invite Alice
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
@@ -96,9 +154,15 @@ class AndroidGreetingTest {
     }
 
     @Test
-    fun outOfOrderComplicatedTest() {
-        val engineAlice = DoubleRatchetEngine(cryptoRepository = CryptoRepositoryImpl())
-        val engineBob = DoubleRatchetEngine(cryptoRepository = CryptoRepositoryImpl())
+    fun outOfOrderComplicatedTest(): TestResult = runTest {
+        val engineAlice = DoubleRatchetEngine(
+            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
+            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+        )
+        val engineBob = DoubleRatchetEngine(
+            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
+            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+        )
 
         // Bob invite Alice
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
