@@ -1,7 +1,7 @@
 package studio.lunabee.doubleratchet.model
 
 data class Conversation(
-    val id: String,
+    val id: DoubleRatchetUUID,
     val sendChainKey: ByteArray? = null,
     val receiveChainKey: ByteArray? = null,
     val contactPublicKey: ByteArray? = null,

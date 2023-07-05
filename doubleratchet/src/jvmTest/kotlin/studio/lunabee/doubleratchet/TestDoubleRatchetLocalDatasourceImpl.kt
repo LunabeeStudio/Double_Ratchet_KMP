@@ -1,17 +1,22 @@
 package studio.lunabee.doubleratchet
 
 import studio.lunabee.doubleratchet.model.Conversation
+import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.storage.DoubleRatchetLocalDatasource
 
+/**
+ * Implementation provided for testing,
+ * The data is stored in map and is not encrypted
+ */
 class TestDoubleRatchetLocalDatasourceImpl : DoubleRatchetLocalDatasource {
     private val storedKeys: MutableMap<String, ByteArray> = mutableMapOf()
-    private val storedConversations: MutableMap<String, Conversation> = mutableMapOf()
+    private val storedConversations: MutableMap<DoubleRatchetUUID, Conversation> = mutableMapOf()
 
     override suspend fun saveOrUpdateConversation(conversation: Conversation) {
         storedConversations[conversation.id] = conversation
     }
 
-    override suspend fun getConversation(id: String): Conversation? = storedConversations[id]
+    override suspend fun getConversation(id: DoubleRatchetUUID): Conversation? = storedConversations[id]
 
     override suspend fun saveMessageKey(id: String, key: ByteArray) {
         storedKeys[id] = key

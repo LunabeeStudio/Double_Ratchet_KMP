@@ -11,6 +11,11 @@ import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import javax.crypto.KeyAgreement
 
+/**
+ * Implementation only provided for testing,
+ * Use ECDH to create the sharedSecrets
+ * Use PBKDF2 with HmacSHA512 to derive keys
+ */
 class DoubleRatchetCryptoRepositoryImpl : DoubleRatchetCryptoRepository {
     override suspend fun generateKeyPair(): AsymmetricKeyPair {
         val ecSpec = ECGenParameterSpec(NAMED_CURVE_SPEC)
