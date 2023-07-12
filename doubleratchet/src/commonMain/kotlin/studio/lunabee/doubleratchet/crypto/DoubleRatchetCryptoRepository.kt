@@ -5,12 +5,12 @@ import studio.lunabee.doubleratchet.model.DerivedKeyPair
 
 interface DoubleRatchetCryptoRepository {
     /**
-     * Generate a public and a private Key
+     * Generate a pair of public and a private Key
      */
     suspend fun generateKeyPair(): AsymmetricKeyPair
 
     /**
-     * generate a chainKey for new conversation
+     * Generate a chainKey for new conversation
      */
     suspend fun generateChainKey(): ByteArray
 

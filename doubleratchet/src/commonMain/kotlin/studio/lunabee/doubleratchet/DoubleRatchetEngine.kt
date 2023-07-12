@@ -22,8 +22,8 @@ class DoubleRatchetEngine(
         val keyPair: AsymmetricKeyPair = doubleRatchetCryptoRepository.generateKeyPair()
         val conversation = Conversation(
             id = newConversationId,
-            personalPrivateKey = keyPair.privateKey,
             personalPublicKey = keyPair.publicKey,
+            personalPrivateKey = keyPair.privateKey,
         )
         doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
         return InvitationData(
@@ -44,11 +44,11 @@ class DoubleRatchetEngine(
         val receiveChainKey: ByteArray = doubleRatchetCryptoRepository.deriveKey(sendChainKey).nextChainKey
         val conversation = Conversation(
             id = newConversationId,
+            personalPublicKey = keyPair.publicKey,
+            personalPrivateKey = keyPair.privateKey,
             sendChainKey = sendChainKey,
             receiveChainKey = receiveChainKey,
             contactPublicKey = contactPublicKey,
-            personalPrivateKey = keyPair.privateKey,
-            personalPublicKey = keyPair.publicKey,
         )
         doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
         return newConversationId
@@ -161,7 +161,7 @@ class DoubleRatchetEngine(
             }
             messageNumber++
         }
-        // Once the contact responded we can delete the chain from database
+        // Once the contact has replied, we can delete the chain from database
         doubleRatchetLocalDatasource.deleteMessageKey(id = conversationId.uuidString())
         return messageKey
     }
