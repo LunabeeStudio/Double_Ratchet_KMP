@@ -13,8 +13,8 @@ class ConversationTest {
 
     @Test
     fun testDiffieHellman(): TestResult = runTest {
-        val cryptoRepository1 = DoubleRatchetCryptoRepositoryImpl()
-        val cryptoRepository2 = DoubleRatchetCryptoRepositoryImpl()
+        val cryptoRepository1 = DoubleRatchetKeyRepositoryImpl()
+        val cryptoRepository2 = DoubleRatchetKeyRepositoryImpl()
         val keyPairAlice = cryptoRepository1.generateKeyPair()
         val keyPairBob = cryptoRepository2.generateKeyPair()
 
@@ -25,8 +25,8 @@ class ConversationTest {
 
     @Test
     fun testDerivationFunction(): TestResult = runTest {
-        val cryptoRepository1 = DoubleRatchetCryptoRepositoryImpl()
-        val cryptoRepository2 = DoubleRatchetCryptoRepositoryImpl()
+        val cryptoRepository1 = DoubleRatchetKeyRepositoryImpl()
+        val cryptoRepository2 = DoubleRatchetKeyRepositoryImpl()
         val chainKey = cryptoRepository1.generateChainKey()
         val value1 = cryptoRepository1.deriveKey(chainKey)
         val value2 = cryptoRepository2.deriveKey(chainKey)
@@ -36,8 +36,8 @@ class ConversationTest {
 
     @Test
     fun testDerivationWithDHFunction(): TestResult = runTest {
-        val cryptoRepository1 = DoubleRatchetCryptoRepositoryImpl()
-        val cryptoRepository2 = DoubleRatchetCryptoRepositoryImpl()
+        val cryptoRepository1 = DoubleRatchetKeyRepositoryImpl()
+        val cryptoRepository2 = DoubleRatchetKeyRepositoryImpl()
         val chainKey = cryptoRepository1.generateChainKey()
         val chainKey2 = cryptoRepository2.generateChainKey()
 
@@ -51,11 +51,11 @@ class ConversationTest {
     fun testConversation(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
-            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
         )
         val engineBob = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
-            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
         )
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
         val aliceToBobConversationId: DoubleRatchetUUID = engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
@@ -72,11 +72,11 @@ class ConversationTest {
     fun tryToDecodeAlreadyDecodedMessage(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
-            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
         )
         val engineBob = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
-            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
         )
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
         val aliceToBobConversationId: DoubleRatchetUUID = engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
@@ -93,11 +93,11 @@ class ConversationTest {
     fun handShakeTest(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
-            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
         )
         val engineBob = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
-            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
         )
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
         val aliceToBobConversationId: DoubleRatchetUUID = engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
@@ -122,11 +122,11 @@ class ConversationTest {
     fun outOfOrderTest(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
-            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
         )
         val engineBob = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
-            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
         )
 
         // Bob invite Alice
@@ -158,11 +158,11 @@ class ConversationTest {
     fun outOfOrderComplicatedTest(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
-            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
         )
         val engineBob = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
-            doubleRatchetCryptoRepository = DoubleRatchetCryptoRepositoryImpl()
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
         )
 
         // Bob invite Alice

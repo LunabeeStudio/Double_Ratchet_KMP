@@ -1,6 +1,6 @@
 package studio.lunabee.doubleratchet
 
-import studio.lunabee.doubleratchet.crypto.DoubleRatchetCryptoRepository
+import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.DerivedKeyPair
 import java.security.KeyFactory
@@ -16,7 +16,7 @@ import javax.crypto.KeyAgreement
  * Use ECDH to create the sharedSecrets
  * Use PBKDF2 with HmacSHA512 to derive keys
  */
-class DoubleRatchetCryptoRepositoryImpl : DoubleRatchetCryptoRepository {
+class DoubleRatchetKeyRepositoryImpl : DoubleRatchetKeyRepository {
     override suspend fun generateKeyPair(): AsymmetricKeyPair {
         val ecSpec = ECGenParameterSpec(NAMED_CURVE_SPEC)
         val keyPairGenerator = KeyPairGenerator.getInstance(ALGORITHM_EC)

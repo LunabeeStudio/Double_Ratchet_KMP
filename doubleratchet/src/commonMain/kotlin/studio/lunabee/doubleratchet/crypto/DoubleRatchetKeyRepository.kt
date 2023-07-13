@@ -3,7 +3,7 @@ package studio.lunabee.doubleratchet.crypto
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.DerivedKeyPair
 
-interface DoubleRatchetCryptoRepository {
+interface DoubleRatchetKeyRepository {
     /**
      * Generate a pair of public and a private Key
      */

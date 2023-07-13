@@ -1,6 +1,6 @@
 package studio.lunabee.doubleratchet
 
-import studio.lunabee.doubleratchet.crypto.DoubleRatchetCryptoRepository
+import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.Conversation
 import studio.lunabee.doubleratchet.model.DoubleRatchetError
@@ -14,12 +14,12 @@ import studio.lunabee.doubleratchet.storage.DoubleRatchetLocalDatasource
 
 class DoubleRatchetEngine(
     private val doubleRatchetLocalDatasource: DoubleRatchetLocalDatasource,
-    private val doubleRatchetCryptoRepository: DoubleRatchetCryptoRepository,
+    private val doubleRatchetKeyRepository: DoubleRatchetKeyRepository,
 ) {
 
     suspend fun createInvitation(): InvitationData {
         val newConversationId: DoubleRatchetUUID = createRandomUUID()
-        val keyPair: AsymmetricKeyPair = doubleRatchetCryptoRepository.generateKeyPair()
+        val keyPair: AsymmetricKeyPair = doubleRatchetKeyRepository.generateKeyPair()
         val conversation = Conversation(
             id = newConversationId,
             personalPublicKey = keyPair.publicKey,
@@ -38,10 +38,10 @@ class DoubleRatchetEngine(
      */
     suspend fun createNewConversationFromInvitation(contactPublicKey: ByteArray): DoubleRatchetUUID {
         val newConversationId: DoubleRatchetUUID = createRandomUUID()
-        val keyPair: AsymmetricKeyPair = doubleRatchetCryptoRepository.generateKeyPair()
-        val sendChainKey: ByteArray = doubleRatchetCryptoRepository.generateChainKey()
+        val keyPair: AsymmetricKeyPair = doubleRatchetKeyRepository.generateKeyPair()
+        val sendChainKey: ByteArray = doubleRatchetKeyRepository.generateChainKey()
         doubleRatchetLocalDatasource.saveMessageKey(id = newConversationId.uuidString(), sendChainKey)
-        val receiveChainKey: ByteArray = doubleRatchetCryptoRepository.deriveKey(sendChainKey).nextChainKey
+        val receiveChainKey: ByteArray = doubleRatchetKeyRepository.deriveKey(sendChainKey).nextChainKey
         val conversation = Conversation(
             id = newConversationId,
             personalPublicKey = keyPair.publicKey,
@@ -66,12 +66,12 @@ class DoubleRatchetEngine(
     }
 
     private suspend fun sendNewSequenceData(conversation: Conversation): SendMessageData {
-        val newKeyPair = doubleRatchetCryptoRepository.generateKeyPair()
-        val sharedSecret = doubleRatchetCryptoRepository.createDiffieHellmanSharedSecret(
+        val newKeyPair = doubleRatchetKeyRepository.generateKeyPair()
+        val sharedSecret = doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(
             conversation.contactPublicKey!!,
             newKeyPair.privateKey
         )
-        val derivedKeyPair = doubleRatchetCryptoRepository.deriveKeys(conversation.sendChainKey!!, sharedSecret)
+        val derivedKeyPair = doubleRatchetKeyRepository.deriveKeys(conversation.sendChainKey!!, sharedSecret)
         val newConversation = conversation.copy(
             personalPublicKey = newKeyPair.publicKey,
             personalPrivateKey = newKeyPair.privateKey,
@@ -96,7 +96,7 @@ class DoubleRatchetEngine(
     }
 
     private suspend fun sendOldSequence(conversation: Conversation): SendMessageData {
-        val derivedKeyPair = doubleRatchetCryptoRepository.deriveKey(conversation.sendChainKey!!)
+        val derivedKeyPair = doubleRatchetKeyRepository.deriveKey(conversation.sendChainKey!!)
         val newConversation = conversation.copy(
             sendChainKey = derivedKeyPair.nextChainKey,
             sentLastMessageData = LastMessageConversationData(
@@ -167,7 +167,7 @@ class DoubleRatchetEngine(
     }
 
     private suspend fun receiveOldSequenceMessage(conversation: Conversation): ByteArray {
-        val derivedKeyPair = doubleRatchetCryptoRepository.deriveKey(conversation.receiveChainKey!!)
+        val derivedKeyPair = doubleRatchetKeyRepository.deriveKey(conversation.receiveChainKey!!)
         val newConversation = conversation.copy(
             receiveChainKey = derivedKeyPair.nextChainKey,
             receivedLastMessageData = LastMessageConversationData(
@@ -180,8 +180,8 @@ class DoubleRatchetEngine(
     }
 
     private suspend fun receiveNewSequenceMessage(publicKey: ByteArray, conversation: Conversation): ByteArray {
-        val sharedSecret = doubleRatchetCryptoRepository.createDiffieHellmanSharedSecret(publicKey, conversation.personalPrivateKey)
-        val derivedKeyPair = doubleRatchetCryptoRepository.deriveKeys(conversation.receiveChainKey!!, sharedSecret)
+        val sharedSecret = doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(publicKey, conversation.personalPrivateKey)
+        val derivedKeyPair = doubleRatchetKeyRepository.deriveKeys(conversation.receiveChainKey!!, sharedSecret)
         val newConversation = conversation.copy(
             receiveChainKey = derivedKeyPair.nextChainKey,
             contactPublicKey = publicKey,
@@ -197,7 +197,7 @@ class DoubleRatchetEngine(
 
     private suspend fun setupConversationOnReceiveMessage(messageHeader: MessageHeader, conversation: Conversation): Conversation {
         val receiveChainKey: ByteArray = messageHeader.chainKey ?: throw DoubleRatchetError(DoubleRatchetError.Type.RequiredChainKeyMissing)
-        val sendChainKey: ByteArray = doubleRatchetCryptoRepository.deriveKey(receiveChainKey).nextChainKey
+        val sendChainKey: ByteArray = doubleRatchetKeyRepository.deriveKey(receiveChainKey).nextChainKey
         return conversation.copy(sendChainKey = sendChainKey, receiveChainKey = receiveChainKey)
     }
 
