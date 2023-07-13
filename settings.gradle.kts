@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Double_Ratchet_KMP"
+rootProject.name = "Double Ratchet KMP"
 include(":doubleratchet")
