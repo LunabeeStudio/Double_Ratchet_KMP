@@ -10,17 +10,24 @@ import java.security.spec.ECGenParameterSpec
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import javax.crypto.KeyAgreement
+import kotlin.random.Random
 
 /**
  * Implementation only provided for testing,
  * Use ECDH to create the sharedSecrets
  * Use PBKDF2 with HmacSHA512 to derive keys
  */
-actual class TestDoubleRatchetKeyRepository : DoubleRatchetKeyRepository {
+actual class TestDoubleRatchetKeyRepository actual constructor(
+    private val random: Random,
+) : DoubleRatchetKeyRepository {
+    private val secureRandom = SecureRandom.getInstance("SHA1PRNG").apply {
+        setSeed(random.nextLong())
+    }
+
     override suspend fun generateKeyPair(): AsymmetricKeyPair {
         val ecSpec = ECGenParameterSpec(NAMED_CURVE_SPEC)
         val keyPairGenerator = KeyPairGenerator.getInstance(ALGORITHM_EC)
-        keyPairGenerator.initialize(ecSpec, SecureRandom())
+        keyPairGenerator.initialize(ecSpec, secureRandom)
         val javaKeyPair = keyPairGenerator.generateKeyPair()
         return AsymmetricKeyPair(
             publicKey = javaKeyPair.public.encoded.copyOf(),
@@ -60,7 +67,6 @@ actual class TestDoubleRatchetKeyRepository : DoubleRatchetKeyRepository {
     private companion object {
         val hashEngine = TestPBKDF2HashEngine()
 
-        val random = SecureRandom()
         const val DEFAULT_SALT_LENGTH_BYTE: Int = 32
         private const val NAMED_CURVE_SPEC = "secp256r1"
         private const val ALGORITHM_EC = "EC"

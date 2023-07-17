@@ -3,8 +3,9 @@ package studio.lunabee.doubleratchet
 import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.DerivedKeyPair
+import kotlin.random.Random
 
-actual class TestDoubleRatchetKeyRepository : DoubleRatchetKeyRepository {
+actual class TestDoubleRatchetKeyRepository actual constructor(random: Random) : DoubleRatchetKeyRepository {
     override suspend fun generateKeyPair(): AsymmetricKeyPair {
         TODO("Not yet implemented")
     }
