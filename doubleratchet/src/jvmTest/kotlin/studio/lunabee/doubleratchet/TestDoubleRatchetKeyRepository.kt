@@ -16,7 +16,7 @@ import javax.crypto.KeyAgreement
  * Use ECDH to create the sharedSecrets
  * Use PBKDF2 with HmacSHA512 to derive keys
  */
-class DoubleRatchetKeyRepositoryImpl : DoubleRatchetKeyRepository {
+actual class TestDoubleRatchetKeyRepository : DoubleRatchetKeyRepository {
     override suspend fun generateKeyPair(): AsymmetricKeyPair {
         val ecSpec = ECGenParameterSpec(NAMED_CURVE_SPEC)
         val keyPairGenerator = KeyPairGenerator.getInstance(ALGORITHM_EC)
@@ -58,7 +58,7 @@ class DoubleRatchetKeyRepositoryImpl : DoubleRatchetKeyRepository {
     }
 
     private companion object {
-        val hashEngine = PBKDF2HashEngine()
+        val hashEngine = TestPBKDF2HashEngine()
 
         val random = SecureRandom()
         const val DEFAULT_SALT_LENGTH_BYTE: Int = 32

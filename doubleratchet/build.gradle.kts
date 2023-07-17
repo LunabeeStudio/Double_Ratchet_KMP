@@ -33,7 +33,9 @@ kotlin {
         val commonMain by getting
         val commonTest by getting {
             dependencies {
+                implementation(libs.junit)
                 implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutine.test)
             }
         }
         val jvmMain by getting
