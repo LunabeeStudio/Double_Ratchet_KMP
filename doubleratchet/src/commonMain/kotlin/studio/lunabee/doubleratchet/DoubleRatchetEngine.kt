@@ -78,7 +78,7 @@ class DoubleRatchetEngine(
             personalPublicKey = newKeyPair.publicKey,
             personalPrivateKey = newKeyPair.privateKey,
             sentLastMessageData = LastMessageConversationData(
-                messageNumber = (conversation.sentLastMessageData?.messageNumber ?: -1) + 1,
+                messageNumber = conversation.sentLastMessageData?.messageNumber?.plus(1) ?: 0,
                 sequenceNumber = 0
             ),
             lastMessageReceivedType = Conversation.MessageType.Sent,
@@ -88,7 +88,7 @@ class DoubleRatchetEngine(
         val chainKeyToSend = doubleRatchetLocalDatasource.retrieveMessageKey(conversation.id.uuidString())
         return SendMessageData(
             messageHeader = MessageHeader(
-                messageNumber = (conversation.sentLastMessageData?.messageNumber ?: -1) + 1,
+                messageNumber = conversation.sentLastMessageData?.messageNumber?.plus(1) ?: 0,
                 sequenceMessageNumber = 0,
                 publicKey = newKeyPair.publicKey,
                 chainKey = chainKeyToSend
@@ -102,16 +102,16 @@ class DoubleRatchetEngine(
         val newConversation = conversation.copy(
             sendChainKey = derivedKeyPair.nextChainKey,
             sentLastMessageData = LastMessageConversationData(
-                messageNumber = (conversation.sentLastMessageData?.messageNumber ?: -1) + 1,
-                sequenceNumber = (conversation.sentLastMessageData?.sequenceNumber ?: -1) + 1
+                messageNumber = conversation.sentLastMessageData?.messageNumber?.plus(1) ?: 0,
+                sequenceNumber = conversation.sentLastMessageData?.sequenceNumber?.plus(1) ?: 0
             ),
         )
         doubleRatchetLocalDatasource.saveOrUpdateConversation(newConversation)
         val chainKeyToSend = doubleRatchetLocalDatasource.retrieveMessageKey(conversation.id.uuidString())
         return SendMessageData(
             messageHeader = MessageHeader(
-                messageNumber = (conversation.sentLastMessageData?.messageNumber ?: -1) + 1,
-                sequenceMessageNumber = (conversation.sentLastMessageData?.sequenceNumber ?: -1) + 1,
+                messageNumber = conversation.sentLastMessageData?.messageNumber?.plus(1) ?: 0,
+                sequenceMessageNumber = conversation.sentLastMessageData?.sequenceNumber?.plus(1) ?: 0,
                 publicKey = conversation.personalPublicKey,
                 chainKey = chainKeyToSend
             ),
@@ -125,7 +125,7 @@ class DoubleRatchetEngine(
     suspend fun getReceiveKey(messageHeader: MessageHeader, conversationId: DoubleRatchetUUID): ByteArray {
         var conversation = doubleRatchetLocalDatasource.getConversation(conversationId)
             ?: throw DoubleRatchetError(DoubleRatchetError.Type.ConversationNotFound)
-        // If the chains keys are unknown, we need to setup conversation with the receiveChainKey in the messageHeader.
+        // If the chains keys are unknown, we need to set up conversation with the receiveChainKey in the messageHeader.
         if (!conversation.isReadyForMessageReceiving()) {
             conversation = setupConversationOnReceiveMessage(messageHeader, conversation)
         }
@@ -186,8 +186,8 @@ class DoubleRatchetEngine(
         val newConversation = conversation.copy(
             receiveChainKey = derivedKeyPair.nextChainKey,
             receivedLastMessageData = LastMessageConversationData(
-                messageNumber = (conversation.receivedLastMessageData?.messageNumber ?: 0) + 1,
-                sequenceNumber = (conversation.receivedLastMessageData?.sequenceNumber ?: 0) + 1,
+                messageNumber = conversation.receivedLastMessageData?.messageNumber?.plus(1) ?: 1,
+                sequenceNumber = conversation.receivedLastMessageData?.sequenceNumber?.plus(1) ?: 1,
             ),
         )
         doubleRatchetLocalDatasource.saveOrUpdateConversation(newConversation)
@@ -202,7 +202,7 @@ class DoubleRatchetEngine(
             receiveChainKey = derivedKeyPair.nextChainKey,
             contactPublicKey = publicKey,
             receivedLastMessageData = LastMessageConversationData(
-                messageNumber = (conversation.receivedLastMessageData?.messageNumber ?: -1) + 1,
+                messageNumber = conversation.receivedLastMessageData?.messageNumber?.plus(1) ?: 0,
                 sequenceNumber = 0
             ),
             lastMessageReceivedType = Conversation.MessageType.Received,
