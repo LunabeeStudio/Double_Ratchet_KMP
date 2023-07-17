@@ -2,53 +2,82 @@ package studio.lunabee.doubleratchet
 
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
-import org.junit.Test
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 import studio.lunabee.doubleratchet.model.DoubleRatchetError
 import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.model.InvitationData
+import kotlin.random.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class ConversationTest {
 
+    companion object {
+        private val seed: Int = Random.nextInt()
+        private val random: Random = Random(seed)
+
+        @BeforeAll
+        @JvmStatic
+        fun setup() {
+            println("Random seed = $seed")
+        }
+    }
+
+    /**
+     * @see <a href="https://signal.org/docs/specifications/doubleratchet/#diffie-hellman-ratchet">
+     *     Diffie-Hellman ratchet</a>
+     */
     @Test
-    fun testDiffieHellman(): TestResult = runTest {
+    fun `DH shared secret algorithm test`(): TestResult = runTest {
         val cryptoRepository1 = DoubleRatchetKeyRepositoryImpl()
         val cryptoRepository2 = DoubleRatchetKeyRepositoryImpl()
         val keyPairAlice = cryptoRepository1.generateKeyPair()
         val keyPairBob = cryptoRepository2.generateKeyPair()
+        val sharedSecretAlice =
+            cryptoRepository1.createDiffieHellmanSharedSecret(keyPairBob.publicKey, keyPairAlice.privateKey)
+        val sharedSecretBob =
+            cryptoRepository2.createDiffieHellmanSharedSecret(keyPairAlice.publicKey, keyPairBob.privateKey)
 
-        val sharedSecretAlice = cryptoRepository1.createDiffieHellmanSharedSecret(keyPairBob.publicKey, keyPairAlice.privateKey)
-        val sharedSecretBob = cryptoRepository2.createDiffieHellmanSharedSecret(keyPairAlice.publicKey, keyPairBob.privateKey)
         assert(sharedSecretAlice.contentEquals(sharedSecretBob))
     }
 
+    /**
+     * @see <a href="https://signal.org/docs/specifications/doubleratchet/#kdf-chains">
+     *     KDF chains</a>
+     */
     @Test
-    fun testDerivationFunction(): TestResult = runTest {
+    fun `KDF algorithm test`(): TestResult = runTest {
+        val chainKey = random.nextBytes(random.nextInt(200))
         val cryptoRepository1 = DoubleRatchetKeyRepositoryImpl()
         val cryptoRepository2 = DoubleRatchetKeyRepositoryImpl()
-        val chainKey = cryptoRepository1.generateChainKey()
         val value1 = cryptoRepository1.deriveKey(chainKey)
         val value2 = cryptoRepository2.deriveKey(chainKey)
+
         assert(value1.messageKey.contentEquals(value2.messageKey))
         assert(value1.nextChainKey.contentEquals(value2.nextChainKey))
     }
 
+
+    /**
+     * @see <a href="https://signal.org/docs/specifications/doubleratchet/#double-ratchet">
+     *     Double Ratchet</a>
+     */
     @Test
-    fun testDerivationWithDHFunction(): TestResult = runTest {
+    fun `Double Ratchet (KDF + DH) algorithm test`(): TestResult = runTest {
+        val chainKey = random.nextBytes(random.nextInt(200))
+        val chainKey2 = random.nextBytes(random.nextInt(200))
         val cryptoRepository1 = DoubleRatchetKeyRepositoryImpl()
         val cryptoRepository2 = DoubleRatchetKeyRepositoryImpl()
-        val chainKey = cryptoRepository1.generateChainKey()
-        val chainKey2 = cryptoRepository2.generateChainKey()
-
         val value1 = cryptoRepository1.deriveKeys(chainKey, chainKey2)
         val value2 = cryptoRepository2.deriveKeys(chainKey, chainKey2)
+
         assert(value1.messageKey.contentEquals(value2.messageKey))
         assert(value1.nextChainKey.contentEquals(value2.nextChainKey))
     }
 
     @Test
-    fun testConversation(): TestResult = runTest {
+    fun `Run conversation flow test`(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
             doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
@@ -58,7 +87,8 @@ class ConversationTest {
             doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
         )
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
-        val aliceToBobConversationId: DoubleRatchetUUID = engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
+        val aliceToBobConversationId: DoubleRatchetUUID =
+            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
         val error = assertFailsWith(DoubleRatchetError::class) {
             engineBob.getSendData(conversationId = bobToAliceInvitation.conversationId)
         }
@@ -69,7 +99,7 @@ class ConversationTest {
     }
 
     @Test
-    fun tryToDecodeAlreadyDecodedMessage(): TestResult = runTest {
+    fun `Decrypt already decrypted message failure test`(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
             doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
@@ -79,7 +109,8 @@ class ConversationTest {
             doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
         )
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
-        val aliceToBobConversationId: DoubleRatchetUUID = engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
+        val aliceToBobConversationId: DoubleRatchetUUID =
+            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
         val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
         assert(aliceMessage1.messageKey.contentEquals(receivedBob1))
@@ -90,7 +121,7 @@ class ConversationTest {
     }
 
     @Test
-    fun handShakeTest(): TestResult = runTest {
+    fun `Run handshake flow test`(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
             doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
@@ -100,7 +131,8 @@ class ConversationTest {
             doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
         )
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
-        val aliceToBobConversationId: DoubleRatchetUUID = engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
+        val aliceToBobConversationId: DoubleRatchetUUID =
+            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
         val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
         assert(aliceMessage1.messageKey.contentEquals(receivedBob1))
@@ -118,8 +150,12 @@ class ConversationTest {
         assert(bobMessage2.messageKey.contentEquals(receiveAlice2))
     }
 
+    /**
+     * @see <a href="https://signal.org/docs/specifications/doubleratchet/#out-of-order-messages">
+     *     Out-of-order messages</a>
+     */
     @Test
-    fun outOfOrderTest(): TestResult = runTest {
+    fun `Run basic out-of-order case test`(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
             doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
@@ -133,7 +169,8 @@ class ConversationTest {
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
 
         // Alice Accept Bob invitation
-        val aliceToBobConversationId: DoubleRatchetUUID = engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
+        val aliceToBobConversationId: DoubleRatchetUUID =
+            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
 
         // Alice send a message to Bob
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
@@ -149,13 +186,20 @@ class ConversationTest {
         val receivedBob4 = engineBob.getReceiveKey(aliceMessage4.messageHeader, bobToAliceInvitation.conversationId)
         assert(aliceMessage4.messageKey.contentEquals(receivedBob4))
         val receivedBob3 = engineBob.getReceiveKey(aliceMessage3.messageHeader, bobToAliceInvitation.conversationId)
-        val receivedBob2 = engineBob.getReceiveKey(aliceMessage2.messageHeader, bobToAliceInvitation.conversationId) // Finally Received
+        val receivedBob2 = engineBob.getReceiveKey(
+            aliceMessage2.messageHeader,
+            bobToAliceInvitation.conversationId
+        ) // Finally Received
         assert(aliceMessage2.messageKey.contentEquals(receivedBob2))
         assert(aliceMessage3.messageKey.contentEquals(receivedBob3))
     }
 
+    /**
+     * @see <a href="https://signal.org/docs/specifications/doubleratchet/#out-of-order-messages">
+     *     Out-of-order messages</a>
+     */
     @Test
-    fun outOfOrderComplicatedTest(): TestResult = runTest {
+    fun `Run advanced out-of-order case test`(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasourceImpl(),
             doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryImpl()
@@ -169,7 +213,8 @@ class ConversationTest {
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
 
         // Alice Accept Bob invitation
-        val aliceToBobConversationId: DoubleRatchetUUID = engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
+        val aliceToBobConversationId: DoubleRatchetUUID =
+            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
 
         // Alice send a message to Bob
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
@@ -193,7 +238,10 @@ class ConversationTest {
         val receivedBob4 = engineBob.getReceiveKey(aliceMessage4.messageHeader, bobToAliceInvitation.conversationId)
         assert(aliceMessage4.messageKey.contentEquals(receivedBob4))
         val receivedBob3 = engineBob.getReceiveKey(aliceMessage3.messageHeader, bobToAliceInvitation.conversationId)
-        val receivedBob2 = engineBob.getReceiveKey(aliceMessage2.messageHeader, bobToAliceInvitation.conversationId) // Finally Received
+        val receivedBob2 = engineBob.getReceiveKey(
+            aliceMessage2.messageHeader,
+            bobToAliceInvitation.conversationId
+        ) // Finally Received
         assert(aliceMessage2.messageKey.contentEquals(receivedBob2))
         assert(aliceMessage3.messageKey.contentEquals(receivedBob3))
     }

@@ -4,6 +4,9 @@ pluginManagement {
         gradlePluginPortal()
         mavenCentral()
     }
+    plugins {
+        id("de.fayard.refreshVersions") version "0.51.0"
+    }
 }
 
 dependencyResolutionManagement {
@@ -11,6 +14,10 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
     }
+}
+
+plugins {
+    id("de.fayard.refreshVersions")
 }
 
 rootProject.name = "Double Ratchet KMP"
