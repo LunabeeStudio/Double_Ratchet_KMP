@@ -132,20 +132,19 @@ class DoubleRatchetEngine(
 
         // If the messageKey has already been generated
         if ((conversation.receivedLastMessageData?.messageNumber ?: -1) >= messageHeader.messageNumber) {
-            return doubleRatchetLocalDatasource.retrieveMessageKey(
+            val retrieveMessageKey = doubleRatchetLocalDatasource.retrieveMessageKey(
                 id = getMessageKeyId(
                     conversationId,
                     messageHeader.messageNumber
                 )
+            ) ?: throw DoubleRatchetError(DoubleRatchetError.Type.MessageKeyNotFound)
+            doubleRatchetLocalDatasource.deleteMessageKey(
+                getMessageKeyId(
+                    conversationId,
+                    messageHeader.messageNumber
+                )
             )
-                ?.also {
-                    doubleRatchetLocalDatasource.deleteMessageKey(
-                        getMessageKeyId(
-                            conversationId,
-                            messageHeader.messageNumber
-                        )
-                    )
-                } ?: throw DoubleRatchetError(DoubleRatchetError.Type.MessageKeyNotFound)
+            return retrieveMessageKey
         }
 
         val lastMessageNumber = conversation.receivedLastMessageData?.messageNumber ?: -1
