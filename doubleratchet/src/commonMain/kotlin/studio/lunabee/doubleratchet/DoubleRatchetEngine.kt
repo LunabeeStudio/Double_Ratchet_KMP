@@ -12,6 +12,7 @@ import studio.lunabee.doubleratchet.model.MessageHeader
 import studio.lunabee.doubleratchet.model.MessageKey
 import studio.lunabee.doubleratchet.model.PublicKey
 import studio.lunabee.doubleratchet.model.SendMessageData
+import studio.lunabee.doubleratchet.model.SharedSecret
 import studio.lunabee.doubleratchet.model.createRandomUUID
 import studio.lunabee.doubleratchet.storage.DoubleRatchetLocalDatasource
 
@@ -163,9 +164,10 @@ class DoubleRatchetEngine(
 
         var messageNumber = lastMessageNumber?.inc() ?: 0u
         var messageKey: MessageKey? = null
+        val sharedSecret = lazy { ByteArray(SharedSecret.SECRET_LENGTH_BYTE) }
         while (messageKey == null) {
             val currentMessageKey = if (messageNumber == newSequenceMessageNumber) {
-                receiveNewSequenceMessage(messageHeader.publicKey, conversation)
+                receiveNewSequenceMessage(messageHeader.publicKey, conversation, SharedSecret(sharedSecret.value))
             } else {
                 receiveOldSequenceMessage(conversation)
             }
@@ -199,9 +201,12 @@ class DoubleRatchetEngine(
         return derivedKeyPair.messageKey
     }
 
-    private suspend fun receiveNewSequenceMessage(publicKey: PublicKey, conversation: Conversation): MessageKey {
-        val sharedSecret =
-            doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(publicKey, conversation.personalKeyPair.privateKey)
+    private suspend fun receiveNewSequenceMessage(
+        publicKey: PublicKey,
+        conversation: Conversation,
+        sharedSecret: SharedSecret,
+    ): MessageKey {
+        doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(publicKey, conversation.personalKeyPair.privateKey, sharedSecret)
         val derivedKeyPair = doubleRatchetKeyRepository.deriveKeys(conversation.receiveChainKey!!, sharedSecret)
         val newConversation = conversation.copy(
             receiveChainKey = derivedKeyPair.nextChainKey,

@@ -42,14 +42,19 @@ class JceDoubleRatchetKeyRepository(
 
     override suspend fun generateChainKey(): ChainKey = ChainKey.random(random)
 
-    override suspend fun createDiffieHellmanSharedSecret(publicKey: PublicKey, privateKey: PrivateKey): SharedSecret {
+    override suspend fun createDiffieHellmanSharedSecret(
+        publicKey: PublicKey,
+        privateKey: PrivateKey,
+        sharedSecret: SharedSecret,
+    ): SharedSecret {
         val keyFactory = KeyFactory.getInstance(ALGORITHM_EC)
         val contactPublicKey = keyFactory.generatePublic(X509EncodedKeySpec(publicKey.value))
         val localPrivateKey = keyFactory.generatePrivate(PKCS8EncodedKeySpec(privateKey.value))
         val keyAgreement = KeyAgreement.getInstance(ALGORITHM_EC_DH)
         keyAgreement.init(localPrivateKey)
         keyAgreement.doPhase(contactPublicKey, true)
-        return SharedSecret(keyAgreement.generateSecret())
+        keyAgreement.generateSecret(sharedSecret.value, 0)
+        return sharedSecret
     }
 
     override suspend fun deriveKey(key: ChainKey): DerivedKeyPair {

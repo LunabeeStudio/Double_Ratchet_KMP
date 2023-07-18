@@ -19,9 +19,13 @@ interface DoubleRatchetKeyRepository {
     suspend fun generateChainKey(): ChainKey
 
     /**
-     * Generate a sharedSecret from a contact public key and a personal private key
+     * Generate a [SharedSecret] from a contact public key and a personal private key in param array [sharedSecret]
      */
-    suspend fun createDiffieHellmanSharedSecret(publicKey: PublicKey, privateKey: PrivateKey): SharedSecret
+    suspend fun createDiffieHellmanSharedSecret(
+        publicKey: PublicKey,
+        privateKey: PrivateKey,
+        sharedSecret: SharedSecret = SharedSecret.empty(),
+    ): SharedSecret
 
     /**
      * Derive a [ChainKey] with a Key Derivation Function and get a message key and a new chainKey

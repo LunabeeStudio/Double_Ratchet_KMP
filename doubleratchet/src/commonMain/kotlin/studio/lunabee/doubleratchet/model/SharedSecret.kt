@@ -13,5 +13,7 @@ value class SharedSecret(val value: ByteArray) {
 
     companion object {
         const val SECRET_LENGTH_BYTE: Int = 32
+
+        fun empty(): SharedSecret = SharedSecret(ByteArray(SECRET_LENGTH_BYTE))
     }
 }
