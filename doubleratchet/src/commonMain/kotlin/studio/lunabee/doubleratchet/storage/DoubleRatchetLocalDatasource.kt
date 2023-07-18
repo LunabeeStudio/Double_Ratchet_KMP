@@ -12,8 +12,20 @@ interface DoubleRatchetLocalDatasource {
     suspend fun saveOrUpdateConversation(conversation: Conversation)
     suspend fun getConversation(id: DoubleRatchetUUID): Conversation?
     suspend fun saveMessageKey(id: String, key: MessageKey)
+
+    /**
+     * Save the initial chain key
+     */
     suspend fun saveChainKey(id: String, key: ChainKey)
-    suspend fun retrieveMessageKey(id: String): MessageKey?
+
+    /**
+     * Return and delete [MessageKey] with id [id]
+     */
+    suspend fun popMessageKey(id: String): MessageKey?
     suspend fun retrieveChainKey(id: String): ChainKey?
-    suspend fun deleteMessageKey(id: String)
+
+    /**
+     * Delete the initial chain key
+     */
+    suspend fun deleteChainKey(id: String)
 }

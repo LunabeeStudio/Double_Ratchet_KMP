@@ -9,7 +9,7 @@ import kotlin.random.Random
  * @see <a href="https://signal.org/docs/specifications/doubleratchet/#state-variables">State variables</a>
  */
 @JvmInline
-value class ChainKey internal constructor(val value: ByteArray) {
+value class ChainKey internal constructor(override val value: ByteArray) : DHCriticalMaterial {
 
     init {
         check(value.size == KEY_LENGTH_BYTE)

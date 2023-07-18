@@ -151,12 +151,14 @@ class ConversationTest {
      */
     @Test
     fun `Run basic out-of-order case test`(): TestResult = runTest {
+        val datasourceA = PlainMapDoubleRatchetLocalDatasource()
         val engineAlice = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
+            doubleRatchetLocalDatasource = datasourceA,
             doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
         )
+        val datasourceB = PlainMapDoubleRatchetLocalDatasource()
         val engineBob = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
+            doubleRatchetLocalDatasource = datasourceB,
             doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
         )
 
@@ -187,6 +189,11 @@ class ConversationTest {
         ) // Finally Received
         assertContentEquals(aliceMessage2.messageKey.value, receivedBob2.value)
         assertContentEquals(aliceMessage3.messageKey.value, receivedBob3.value)
+
+        assertEquals(1, datasourceA.chainKeys.size) // Alice did not receive message
+        assertIsEmpty(datasourceA.messageKeys)
+        assertIsEmpty(datasourceB.chainKeys)
+        assertIsEmpty(datasourceB.messageKeys)
     }
 
     /**
@@ -195,12 +202,14 @@ class ConversationTest {
      */
     @Test
     fun `Run advanced out-of-order case test`(): TestResult = runTest {
+        val datasourceA = PlainMapDoubleRatchetLocalDatasource()
         val engineAlice = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
+            doubleRatchetLocalDatasource = datasourceA,
             doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
         )
+        val datasourceB = PlainMapDoubleRatchetLocalDatasource()
         val engineBob = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
+            doubleRatchetLocalDatasource = datasourceB,
             doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
         )
 
@@ -239,5 +248,10 @@ class ConversationTest {
         ) // Finally Received
         assertContentEquals(aliceMessage2.messageKey.value, receivedBob2.value)
         assertContentEquals(aliceMessage3.messageKey.value, receivedBob3.value)
+
+        assertIsEmpty(datasourceA.chainKeys)
+        assertIsEmpty(datasourceA.messageKeys)
+        assertIsEmpty(datasourceB.chainKeys)
+        assertIsEmpty(datasourceB.messageKeys)
     }
 }

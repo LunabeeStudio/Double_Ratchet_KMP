@@ -1,9 +1,12 @@
 package studio.lunabee.doubleratchet
 
+import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.ChainKey
 import studio.lunabee.doubleratchet.model.Conversation
 import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.model.MessageKey
+import studio.lunabee.doubleratchet.model.PrivateKey
+import studio.lunabee.doubleratchet.model.PublicKey
 import studio.lunabee.doubleratchet.storage.DoubleRatchetLocalDatasource
 
 /**
@@ -11,38 +14,46 @@ import studio.lunabee.doubleratchet.storage.DoubleRatchetLocalDatasource
  * The data is stored in map and is not encrypted
  */
 class PlainMapDoubleRatchetLocalDatasource : DoubleRatchetLocalDatasource {
-    private val storedKeys: MutableMap<String, ByteArray> = mutableMapOf()
-    private val storedConversations: MutableMap<DoubleRatchetUUID, Conversation> = mutableMapOf()
+    val messageKeys: MutableMap<String, MessageKey> = mutableMapOf()
+    val chainKeys: MutableMap<String, ChainKey> = mutableMapOf()
+    val conversations: MutableMap<DoubleRatchetUUID, Conversation> = mutableMapOf()
 
     override suspend fun saveOrUpdateConversation(conversation: Conversation) {
-        storedConversations[conversation.id] = conversation
+        // deep copy
+        conversations[conversation.id] = Conversation(
+            conversation.id,
+            AsymmetricKeyPair(
+                PublicKey(conversation.personalKeyPair.publicKey.value.copyOf()),
+                PrivateKey(conversation.personalKeyPair.privateKey.value.copyOf()),
+            ),
+            conversation.sendChainKey?.value?.let { ChainKey(it.copyOf()) },
+            conversation.receiveChainKey?.value?.let { ChainKey(it.copyOf()) },
+            conversation.contactPublicKey?.value?.let { PublicKey(it.copyOf()) },
+            conversation.lastMessageReceivedType,
+            conversation.sentLastMessageData,
+            conversation.receivedLastMessageData,
+        )
     }
 
-    override suspend fun getConversation(id: DoubleRatchetUUID): Conversation? = storedConversations[id]
+    override suspend fun getConversation(id: DoubleRatchetUUID): Conversation? = conversations[id]
 
     override suspend fun saveMessageKey(id: String, key: MessageKey) {
-        saveKey(id, key.value)
+        messageKeys[id] = MessageKey(key.value.copyOf())
     }
 
     override suspend fun saveChainKey(id: String, key: ChainKey) {
-        saveKey(id, key.value)
+        chainKeys[id] = ChainKey(key.value.copyOf())
     }
 
-    override suspend fun retrieveMessageKey(id: String): MessageKey? {
-        return retrieveKey(id)?.let { MessageKey(it) }
+    override suspend fun popMessageKey(id: String): MessageKey? {
+        return messageKeys.remove(id)
     }
 
     override suspend fun retrieveChainKey(id: String): ChainKey? {
-        return retrieveKey(id)?.let { ChainKey(it) }
+        return chainKeys[id]
     }
 
-    private fun saveKey(id: String, key: ByteArray) {
-        storedKeys[id] = key
-    }
-
-    private fun retrieveKey(id: String): ByteArray? = storedKeys[id]
-
-    override suspend fun deleteMessageKey(id: String) {
-        storedKeys.remove(id)
+    override suspend fun deleteChainKey(id: String) {
+        chainKeys.remove(id)
     }
 }
