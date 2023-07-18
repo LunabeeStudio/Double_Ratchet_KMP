@@ -24,6 +24,4 @@ actual class TestDoubleRatchetLocalDatasource : DoubleRatchetLocalDatasource {
     override suspend fun deleteMessageKey(id: String) {
         TODO("Not yet implemented")
     }
-
 }
-
