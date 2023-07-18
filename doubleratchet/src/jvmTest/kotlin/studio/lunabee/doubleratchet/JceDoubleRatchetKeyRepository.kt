@@ -30,8 +30,8 @@ class JceDoubleRatchetKeyRepository(
         keyPairGenerator.initialize(ecSpec, secureRandom)
         val javaKeyPair = keyPairGenerator.generateKeyPair()
         return AsymmetricKeyPair(
-            publicKey = javaKeyPair.public.encoded.copyOf(),
-            privateKey = javaKeyPair.private.encoded.copyOf(),
+            publicKey = javaKeyPair.public.encoded,
+            privateKey = javaKeyPair.private.encoded,
         )
     }
 
@@ -48,19 +48,19 @@ class JceDoubleRatchetKeyRepository(
         val keyAgreement = KeyAgreement.getInstance(ALGORITHM_EC_DH)
         keyAgreement.init(localPrivateKey)
         keyAgreement.doPhase(contactPublicKey, true)
-        return keyAgreement.generateSecret().copyOf()
+        return keyAgreement.generateSecret()
     }
 
     override suspend fun deriveKey(key: ByteArray): DerivedKeyPair {
-        val messageKey = hashEngine.deriveKey(key, byteArrayOf(0x01)).copyOf()
-        val nextChainKey = hashEngine.deriveKey(key, byteArrayOf(0x02)).copyOf()
+        val messageKey = hashEngine.deriveKey(key, byteArrayOf(0x01))
+        val nextChainKey = hashEngine.deriveKey(key, byteArrayOf(0x02))
         return DerivedKeyPair(messageKey, nextChainKey)
     }
 
     override suspend fun deriveKeys(chainKey: ByteArray, sharedSecret: ByteArray): DerivedKeyPair {
-        val derivedWithSharedSecretKey = hashEngine.deriveKey(chainKey, sharedSecret).copyOf()
-        val messageKey = hashEngine.deriveKey(derivedWithSharedSecretKey.copyOf(), byteArrayOf(0x01)).copyOf()
-        val nextChainKey = hashEngine.deriveKey(derivedWithSharedSecretKey.copyOf(), byteArrayOf(0x02)).copyOf()
+        val derivedWithSharedSecretKey = hashEngine.deriveKey(chainKey, sharedSecret)
+        val messageKey = hashEngine.deriveKey(derivedWithSharedSecretKey, byteArrayOf(0x01))
+        val nextChainKey = hashEngine.deriveKey(derivedWithSharedSecretKey, byteArrayOf(0x02))
         return DerivedKeyPair(messageKey, nextChainKey)
     }
 
