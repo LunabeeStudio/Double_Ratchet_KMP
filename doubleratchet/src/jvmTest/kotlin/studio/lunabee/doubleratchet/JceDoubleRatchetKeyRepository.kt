@@ -17,7 +17,7 @@ import kotlin.random.Random
  * Use ECDH to create the sharedSecrets
  * Use PBKDF2 with HmacSHA512 to derive keys
  */
-actual class TestDoubleRatchetKeyRepository actual constructor(
+class JceDoubleRatchetKeyRepository(
     private val random: Random,
 ) : DoubleRatchetKeyRepository {
     private val secureRandom = SecureRandom.getInstance("SHA1PRNG").apply {
@@ -65,7 +65,7 @@ actual class TestDoubleRatchetKeyRepository actual constructor(
     }
 
     private companion object {
-        val hashEngine = TestPBKDF2HashEngine()
+        val hashEngine = JcePBKDF2HashEngine()
 
         const val DEFAULT_SALT_LENGTH_BYTE: Int = 32
         private const val NAMED_CURVE_SPEC = "secp256r1"

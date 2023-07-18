@@ -62,8 +62,3 @@ data class Conversation(
         Sent, Received
     }
 }
-
-class LastMessageConversationData(
-    val messageNumber: Int,
-    val sequenceNumber: Int,
-)

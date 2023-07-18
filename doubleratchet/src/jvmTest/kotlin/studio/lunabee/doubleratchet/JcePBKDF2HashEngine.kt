@@ -9,7 +9,7 @@ import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 import javax.security.auth.DestroyFailedException
 
-class TestPBKDF2HashEngine {
+class JcePBKDF2HashEngine {
     private val secretKeyFactory: SecretKeyFactory
 
     init {

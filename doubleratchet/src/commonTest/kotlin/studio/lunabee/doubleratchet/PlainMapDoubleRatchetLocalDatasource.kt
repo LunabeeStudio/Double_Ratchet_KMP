@@ -8,7 +8,7 @@ import studio.lunabee.doubleratchet.storage.DoubleRatchetLocalDatasource
  * Implementation provided for testing,
  * The data is stored in map and is not encrypted
  */
-actual class TestDoubleRatchetLocalDatasource : DoubleRatchetLocalDatasource {
+class PlainMapDoubleRatchetLocalDatasource : DoubleRatchetLocalDatasource {
     private val storedKeys: MutableMap<String, ByteArray> = mutableMapOf()
     private val storedConversations: MutableMap<DoubleRatchetUUID, Conversation> = mutableMapOf()
 

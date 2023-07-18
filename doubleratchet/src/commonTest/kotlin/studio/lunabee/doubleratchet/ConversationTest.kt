@@ -26,8 +26,8 @@ class ConversationTest {
      */
     @Test
     fun `DH shared secret algorithm test`(): TestResult = runTest {
-        val cryptoRepository1 = TestDoubleRatchetKeyRepository(random)
-        val cryptoRepository2 = TestDoubleRatchetKeyRepository(random)
+        val cryptoRepository1 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
+        val cryptoRepository2 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val keyPairAlice = cryptoRepository1.generateKeyPair()
         val keyPairBob = cryptoRepository2.generateKeyPair()
         val sharedSecretAlice =
@@ -45,8 +45,8 @@ class ConversationTest {
     @Test
     fun `KDF algorithm test`(): TestResult = runTest {
         val chainKey = random.nextBytes(random.nextInt(200))
-        val cryptoRepository1 = TestDoubleRatchetKeyRepository(random)
-        val cryptoRepository2 = TestDoubleRatchetKeyRepository(random)
+        val cryptoRepository1 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
+        val cryptoRepository2 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val value1 = cryptoRepository1.deriveKey(chainKey)
         val value2 = cryptoRepository2.deriveKey(chainKey)
 
@@ -62,8 +62,8 @@ class ConversationTest {
     fun `Double Ratchet KDF+DH algorithm test`(): TestResult = runTest {
         val chainKey = random.nextBytes(random.nextInt(200))
         val chainKey2 = random.nextBytes(random.nextInt(200))
-        val cryptoRepository1 = TestDoubleRatchetKeyRepository(random)
-        val cryptoRepository2 = TestDoubleRatchetKeyRepository(random)
+        val cryptoRepository1 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
+        val cryptoRepository2 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val value1 = cryptoRepository1.deriveKeys(chainKey, chainKey2)
         val value2 = cryptoRepository2.deriveKeys(chainKey, chainKey2)
 
@@ -74,12 +74,12 @@ class ConversationTest {
     @Test
     fun `Run conversation flow test`(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = TestDoubleRatchetKeyRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
         )
         val engineBob = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = TestDoubleRatchetKeyRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
         )
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
         val aliceToBobConversationId: DoubleRatchetUUID =
@@ -96,12 +96,12 @@ class ConversationTest {
     @Test
     fun `Decrypt already decrypted message failure test`(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = TestDoubleRatchetKeyRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
         )
         val engineBob = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = TestDoubleRatchetKeyRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
         )
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
         val aliceToBobConversationId: DoubleRatchetUUID =
@@ -118,12 +118,12 @@ class ConversationTest {
     @Test
     fun `Run handshake flow test`(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = TestDoubleRatchetKeyRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
         )
         val engineBob = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = TestDoubleRatchetKeyRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
         )
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
         val aliceToBobConversationId: DoubleRatchetUUID =
@@ -152,12 +152,12 @@ class ConversationTest {
     @Test
     fun `Run basic out-of-order case test`(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = TestDoubleRatchetKeyRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
         )
         val engineBob = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = TestDoubleRatchetKeyRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
         )
 
         // Bob invite Alice
@@ -196,12 +196,12 @@ class ConversationTest {
     @Test
     fun `Run advanced out-of-order case test`(): TestResult = runTest {
         val engineAlice = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = TestDoubleRatchetKeyRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
         )
         val engineBob = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = TestDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = TestDoubleRatchetKeyRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
+            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
         )
 
         // Bob invite Alice
