@@ -2,7 +2,10 @@ package studio.lunabee.doubleratchet
 
 import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
+import studio.lunabee.doubleratchet.model.ChainKey
 import studio.lunabee.doubleratchet.model.DerivedKeyPair
+import studio.lunabee.doubleratchet.model.MessageKey
+import studio.lunabee.doubleratchet.model.SharedSecret
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
 import java.security.SecureRandom
@@ -35,39 +38,34 @@ class JceDoubleRatchetKeyRepository(
         )
     }
 
-    override suspend fun generateChainKey(): ByteArray {
-        return ByteArray(DEFAULT_SALT_LENGTH_BYTE).apply {
-            random.nextBytes(this)
-        }
-    }
+    override suspend fun generateChainKey(): ChainKey = ChainKey.random(random)
 
-    override suspend fun createDiffieHellmanSharedSecret(publicKey: ByteArray, privateKey: ByteArray): ByteArray {
+    override suspend fun createDiffieHellmanSharedSecret(publicKey: ByteArray, privateKey: ByteArray): SharedSecret {
         val keyFactory = KeyFactory.getInstance(ALGORITHM_EC)
         val contactPublicKey = keyFactory.generatePublic(X509EncodedKeySpec(publicKey))
         val localPrivateKey = keyFactory.generatePrivate(PKCS8EncodedKeySpec(privateKey))
         val keyAgreement = KeyAgreement.getInstance(ALGORITHM_EC_DH)
         keyAgreement.init(localPrivateKey)
         keyAgreement.doPhase(contactPublicKey, true)
-        return keyAgreement.generateSecret()
+        return SharedSecret(keyAgreement.generateSecret())
     }
 
-    override suspend fun deriveKey(key: ByteArray): DerivedKeyPair {
-        val messageKey = hashEngine.deriveKey(key, byteArrayOf(0x01))
-        val nextChainKey = hashEngine.deriveKey(key, byteArrayOf(0x02))
+    override suspend fun deriveKey(key: ChainKey): DerivedKeyPair {
+        val messageKey = MessageKey(hashEngine.deriveKey(key.value, byteArrayOf(0x01)))
+        val nextChainKey = ChainKey(hashEngine.deriveKey(key.value, byteArrayOf(0x02)))
         return DerivedKeyPair(messageKey, nextChainKey)
     }
 
-    override suspend fun deriveKeys(chainKey: ByteArray, sharedSecret: ByteArray): DerivedKeyPair {
-        val derivedWithSharedSecretKey = hashEngine.deriveKey(chainKey, sharedSecret)
-        val messageKey = hashEngine.deriveKey(derivedWithSharedSecretKey, byteArrayOf(0x01))
-        val nextChainKey = hashEngine.deriveKey(derivedWithSharedSecretKey, byteArrayOf(0x02))
+    override suspend fun deriveKeys(chainKey: ChainKey, sharedSecret: SharedSecret): DerivedKeyPair {
+        val derivedWithSharedSecretKey = hashEngine.deriveKey(chainKey.value, sharedSecret.value)
+        val messageKey = MessageKey(hashEngine.deriveKey(derivedWithSharedSecretKey, byteArrayOf(0x01)))
+        val nextChainKey = ChainKey(hashEngine.deriveKey(derivedWithSharedSecretKey, byteArrayOf(0x02)))
         return DerivedKeyPair(messageKey, nextChainKey)
     }
 
     private companion object {
         val hashEngine = JcePBKDF2HashEngine()
 
-        const val DEFAULT_SALT_LENGTH_BYTE: Int = 32
         private const val NAMED_CURVE_SPEC = "secp256r1"
         private const val ALGORITHM_EC = "EC"
         private const val ALGORITHM_EC_DH = "ECDH"

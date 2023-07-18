@@ -1,7 +1,9 @@
 package studio.lunabee.doubleratchet.crypto
 
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
+import studio.lunabee.doubleratchet.model.ChainKey
 import studio.lunabee.doubleratchet.model.DerivedKeyPair
+import studio.lunabee.doubleratchet.model.SharedSecret
 
 interface DoubleRatchetKeyRepository {
     /**
@@ -10,22 +12,22 @@ interface DoubleRatchetKeyRepository {
     suspend fun generateKeyPair(): AsymmetricKeyPair
 
     /**
-     * Generate a chainKey for new conversation
+     * Generate a [ChainKey] for new conversation
      */
-    suspend fun generateChainKey(): ByteArray
+    suspend fun generateChainKey(): ChainKey
 
     /**
      * Generate a sharedSecret from a contact public key and a personal private key
      */
-    suspend fun createDiffieHellmanSharedSecret(publicKey: ByteArray, privateKey: ByteArray): ByteArray
+    suspend fun createDiffieHellmanSharedSecret(publicKey: ByteArray, privateKey: ByteArray): SharedSecret
 
     /**
-     * Derive chainKey with a Key Derivation Function and get a message key and a new chainKey
+     * Derive a [ChainKey] with a Key Derivation Function and get a message key and a new chainKey
      */
-    suspend fun deriveKey(key: ByteArray): DerivedKeyPair
+    suspend fun deriveKey(key: ChainKey): DerivedKeyPair
 
     /**
-     * Derive chainKey and sharedSecret with a Key Derivation Function and get a message key and a new chainKey
+     * Derive [ChainKey] and [SharedSecret] with a Key Derivation Function and get a message key and a new chainKey
      */
-    suspend fun deriveKeys(chainKey: ByteArray, sharedSecret: ByteArray): DerivedKeyPair
+    suspend fun deriveKeys(chainKey: ChainKey, sharedSecret: SharedSecret): DerivedKeyPair
 }

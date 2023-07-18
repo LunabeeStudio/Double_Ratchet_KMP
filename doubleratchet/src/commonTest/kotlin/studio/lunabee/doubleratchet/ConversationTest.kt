@@ -2,9 +2,11 @@ package studio.lunabee.doubleratchet
 
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
+import studio.lunabee.doubleratchet.model.ChainKey
 import studio.lunabee.doubleratchet.model.DoubleRatchetError
 import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.model.InvitationData
+import studio.lunabee.doubleratchet.model.SharedSecret
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -32,7 +34,7 @@ class ConversationTest {
         val sharedSecretBob =
             cryptoRepository2.createDiffieHellmanSharedSecret(keyPairAlice.publicKey, keyPairBob.privateKey)
 
-        assertContentEquals(sharedSecretAlice, sharedSecretBob)
+        assertContentEquals(sharedSecretAlice.value, sharedSecretBob.value)
     }
 
     /**
@@ -41,14 +43,14 @@ class ConversationTest {
      */
     @Test
     fun `KDF algorithm test`(): TestResult = runTest {
-        val chainKey = random.nextBytes(random.nextInt(200))
+        val chainKey = ChainKey.random(random)
         val cryptoRepository1 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val cryptoRepository2 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val value1 = cryptoRepository1.deriveKey(chainKey)
         val value2 = cryptoRepository2.deriveKey(chainKey)
 
-        assertContentEquals(value1.messageKey, value2.messageKey)
-        assertContentEquals(value1.nextChainKey, value2.nextChainKey)
+        assertContentEquals(value1.messageKey.value, value2.messageKey.value)
+        assertContentEquals(value1.nextChainKey.value, value2.nextChainKey.value)
     }
 
     /**
@@ -57,15 +59,15 @@ class ConversationTest {
      */
     @Test
     fun `Double Ratchet KDF+DH algorithm test`(): TestResult = runTest {
-        val chainKey = random.nextBytes(random.nextInt(200))
-        val chainKey2 = random.nextBytes(random.nextInt(200))
+        val chainK = ChainKey.random(random)
+        val sharedSecret = SharedSecret(random.nextBytes(random.nextInt(200)))
         val cryptoRepository1 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val cryptoRepository2 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
-        val value1 = cryptoRepository1.deriveKeys(chainKey, chainKey2)
-        val value2 = cryptoRepository2.deriveKeys(chainKey, chainKey2)
+        val value1 = cryptoRepository1.deriveKeys(chainK, sharedSecret)
+        val value2 = cryptoRepository2.deriveKeys(chainK, sharedSecret)
 
-        assertContentEquals(value1.messageKey, value2.messageKey)
-        assertContentEquals(value1.nextChainKey, value2.nextChainKey)
+        assertContentEquals(value1.messageKey.value, value2.messageKey.value)
+        assertContentEquals(value1.nextChainKey.value, value2.nextChainKey.value)
     }
 
     @Test
@@ -87,7 +89,7 @@ class ConversationTest {
         assertEquals(DoubleRatchetError.Type.ConversationNotSetup, error.type)
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
         val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
-        assertContentEquals(aliceMessage1.messageKey, receivedBob1)
+        assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
     }
 
     @Test
@@ -105,7 +107,7 @@ class ConversationTest {
             engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
         val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
-        assertContentEquals(aliceMessage1.messageKey, receivedBob1)
+        assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
         val receivedBis = assertFailsWith(DoubleRatchetError::class) {
             engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
         }
@@ -127,19 +129,19 @@ class ConversationTest {
             engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
         val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
-        assertContentEquals(aliceMessage1.messageKey, receivedBob1)
+        assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
         val aliceMessage2 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
         val receivedBob2 = engineBob.getReceiveKey(aliceMessage2.messageHeader, bobToAliceInvitation.conversationId)
-        assertContentEquals(aliceMessage2.messageKey, receivedBob2)
+        assertContentEquals(aliceMessage2.messageKey.value, receivedBob2.value)
         val aliceMessage3 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
         val receivedBob3 = engineBob.getReceiveKey(aliceMessage3.messageHeader, bobToAliceInvitation.conversationId)
-        assertContentEquals(aliceMessage3.messageKey, receivedBob3)
+        assertContentEquals(aliceMessage3.messageKey.value, receivedBob3.value)
         val bobMessage1 = engineBob.getSendData(bobToAliceInvitation.conversationId)
         val receiveAlice1 = engineAlice.getReceiveKey(bobMessage1.messageHeader, aliceToBobConversationId)
-        assertContentEquals(bobMessage1.messageKey, receiveAlice1)
+        assertContentEquals(bobMessage1.messageKey.value, receiveAlice1.value)
         val bobMessage2 = engineBob.getSendData(bobToAliceInvitation.conversationId)
         val receiveAlice2 = engineAlice.getReceiveKey(bobMessage2.messageHeader, aliceToBobConversationId)
-        assertContentEquals(bobMessage2.messageKey, receiveAlice2)
+        assertContentEquals(bobMessage2.messageKey.value, receiveAlice2.value)
     }
 
     /**
@@ -169,21 +171,21 @@ class ConversationTest {
 
         // Bob receives the message
         val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
-        assertContentEquals(aliceMessage1.messageKey, receivedBob1)
+        assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
 
         // Alice sends a message to bob again, but bob misses it
         val aliceMessage2 = engineAlice.getSendData(conversationId = aliceToBobConversationId) // Missed
         val aliceMessage3 = engineAlice.getSendData(conversationId = aliceToBobConversationId) // Missed
         val aliceMessage4 = engineAlice.getSendData(conversationId = aliceToBobConversationId) // RECEIVED
         val receivedBob4 = engineBob.getReceiveKey(aliceMessage4.messageHeader, bobToAliceInvitation.conversationId)
-        assertContentEquals(aliceMessage4.messageKey, receivedBob4)
+        assertContentEquals(aliceMessage4.messageKey.value, receivedBob4.value)
         val receivedBob3 = engineBob.getReceiveKey(aliceMessage3.messageHeader, bobToAliceInvitation.conversationId)
         val receivedBob2 = engineBob.getReceiveKey(
             aliceMessage2.messageHeader,
             bobToAliceInvitation.conversationId,
         ) // Finally Received
-        assertContentEquals(aliceMessage2.messageKey, receivedBob2)
-        assertContentEquals(aliceMessage3.messageKey, receivedBob3)
+        assertContentEquals(aliceMessage2.messageKey.value, receivedBob2.value)
+        assertContentEquals(aliceMessage3.messageKey.value, receivedBob3.value)
     }
 
     /**
@@ -213,28 +215,28 @@ class ConversationTest {
 
         // Bob receives the message
         val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
-        assertContentEquals(aliceMessage1.messageKey, receivedBob1)
+        assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
 
         // Alice sends a message to bob again, but bob misses it
         val aliceMessage2 = engineAlice.getSendData(conversationId = aliceToBobConversationId) // Missed
         val bobMessage1 = engineBob.getSendData(conversationId = bobToAliceInvitation.conversationId)
         val receivedAlice1 = engineAlice.getReceiveKey(bobMessage1.messageHeader, aliceToBobConversationId)
-        assertContentEquals(bobMessage1.messageKey, receivedAlice1)
+        assertContentEquals(bobMessage1.messageKey.value, receivedAlice1.value)
 
         val bobMessage2 = engineBob.getSendData(conversationId = bobToAliceInvitation.conversationId)
         val receivedAlice2 = engineAlice.getReceiveKey(bobMessage2.messageHeader, aliceToBobConversationId)
-        assertContentEquals(bobMessage2.messageKey, receivedAlice2)
+        assertContentEquals(bobMessage2.messageKey.value, receivedAlice2.value)
 
         val aliceMessage3 = engineAlice.getSendData(conversationId = aliceToBobConversationId) // Missed
         val aliceMessage4 = engineAlice.getSendData(conversationId = aliceToBobConversationId) // RECEIVED
         val receivedBob4 = engineBob.getReceiveKey(aliceMessage4.messageHeader, bobToAliceInvitation.conversationId)
-        assertContentEquals(aliceMessage4.messageKey, receivedBob4)
+        assertContentEquals(aliceMessage4.messageKey.value, receivedBob4.value)
         val receivedBob3 = engineBob.getReceiveKey(aliceMessage3.messageHeader, bobToAliceInvitation.conversationId)
         val receivedBob2 = engineBob.getReceiveKey(
             aliceMessage2.messageHeader,
             bobToAliceInvitation.conversationId,
         ) // Finally Received
-        assertContentEquals(aliceMessage2.messageKey, receivedBob2)
-        assertContentEquals(aliceMessage3.messageKey, receivedBob3)
+        assertContentEquals(aliceMessage2.messageKey.value, receivedBob2.value)
+        assertContentEquals(aliceMessage3.messageKey.value, receivedBob3.value)
     }
 }

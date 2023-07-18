@@ -4,8 +4,8 @@ data class Conversation(
     val id: DoubleRatchetUUID,
     val personalPublicKey: ByteArray,
     val personalPrivateKey: ByteArray,
-    val sendChainKey: ByteArray? = null,
-    val receiveChainKey: ByteArray? = null,
+    val sendChainKey: ChainKey? = null,
+    val receiveChainKey: ChainKey? = null,
     val contactPublicKey: ByteArray? = null,
     val lastMessageReceivedType: MessageType? = null,
     val sentLastMessageData: MessageConversationCounter? = null,
@@ -28,14 +28,8 @@ data class Conversation(
         if (id != other.id) return false
         if (!personalPublicKey.contentEquals(other.personalPublicKey)) return false
         if (!personalPrivateKey.contentEquals(other.personalPrivateKey)) return false
-        if (sendChainKey != null) {
-            if (other.sendChainKey == null) return false
-            if (!sendChainKey.contentEquals(other.sendChainKey)) return false
-        } else if (other.sendChainKey != null) return false
-        if (receiveChainKey != null) {
-            if (other.receiveChainKey == null) return false
-            if (!receiveChainKey.contentEquals(other.receiveChainKey)) return false
-        } else if (other.receiveChainKey != null) return false
+        if (sendChainKey != other.sendChainKey) return false
+        if (receiveChainKey != other.receiveChainKey) return false
         if (contactPublicKey != null) {
             if (other.contactPublicKey == null) return false
             if (!contactPublicKey.contentEquals(other.contactPublicKey)) return false
@@ -49,8 +43,8 @@ data class Conversation(
         var result = id.hashCode()
         result = 31 * result + personalPublicKey.contentHashCode()
         result = 31 * result + personalPrivateKey.contentHashCode()
-        result = 31 * result + (sendChainKey?.contentHashCode() ?: 0)
-        result = 31 * result + (receiveChainKey?.contentHashCode() ?: 0)
+        result = 31 * result + (sendChainKey?.hashCode() ?: 0)
+        result = 31 * result + (receiveChainKey?.hashCode() ?: 0)
         result = 31 * result + (contactPublicKey?.contentHashCode() ?: 0)
         result = 31 * result + (lastMessageReceivedType?.hashCode() ?: 0)
         result = 31 * result + (sentLastMessageData?.hashCode() ?: 0)
