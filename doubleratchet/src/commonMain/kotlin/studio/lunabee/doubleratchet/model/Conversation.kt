@@ -2,8 +2,7 @@ package studio.lunabee.doubleratchet.model
 
 data class Conversation(
     val id: DoubleRatchetUUID,
-    val personalPublicKey: ByteArray,
-    val personalPrivateKey: ByteArray,
+    val personalKeyPair: AsymmetricKeyPair,
     val sendChainKey: ChainKey? = null,
     val receiveChainKey: ChainKey? = null,
     val contactPublicKey: ByteArray? = null,
@@ -26,8 +25,7 @@ data class Conversation(
         other as Conversation
 
         if (id != other.id) return false
-        if (!personalPublicKey.contentEquals(other.personalPublicKey)) return false
-        if (!personalPrivateKey.contentEquals(other.personalPrivateKey)) return false
+        if (personalKeyPair != other.personalKeyPair) return false
         if (sendChainKey != other.sendChainKey) return false
         if (receiveChainKey != other.receiveChainKey) return false
         if (contactPublicKey != null) {
@@ -41,8 +39,7 @@ data class Conversation(
 
     override fun hashCode(): Int {
         var result = id.hashCode()
-        result = 31 * result + personalPublicKey.contentHashCode()
-        result = 31 * result + personalPrivateKey.contentHashCode()
+        result = 31 * result + personalKeyPair.hashCode()
         result = 31 * result + (sendChainKey?.hashCode() ?: 0)
         result = 31 * result + (receiveChainKey?.hashCode() ?: 0)
         result = 31 * result + (contactPublicKey?.contentHashCode() ?: 0)
