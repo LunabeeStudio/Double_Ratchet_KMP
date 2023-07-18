@@ -10,6 +10,7 @@ import studio.lunabee.doubleratchet.model.InvitationData
 import studio.lunabee.doubleratchet.model.MessageConversationCounter
 import studio.lunabee.doubleratchet.model.MessageHeader
 import studio.lunabee.doubleratchet.model.MessageKey
+import studio.lunabee.doubleratchet.model.PublicKey
 import studio.lunabee.doubleratchet.model.SendMessageData
 import studio.lunabee.doubleratchet.model.createRandomUUID
 import studio.lunabee.doubleratchet.storage.DoubleRatchetLocalDatasource
@@ -38,7 +39,7 @@ class DoubleRatchetEngine(
      * @return the provided or generated id assign to the conversation created
      */
     suspend fun createNewConversationFromInvitation(
-        contactPublicKey: ByteArray,
+        contactPublicKey: PublicKey,
         newConversationId: DoubleRatchetUUID = createRandomUUID(),
     ): DoubleRatchetUUID {
         val keyPair: AsymmetricKeyPair = doubleRatchetKeyRepository.generateKeyPair()
@@ -198,7 +199,7 @@ class DoubleRatchetEngine(
         return derivedKeyPair.messageKey
     }
 
-    private suspend fun receiveNewSequenceMessage(publicKey: ByteArray, conversation: Conversation): MessageKey {
+    private suspend fun receiveNewSequenceMessage(publicKey: PublicKey, conversation: Conversation): MessageKey {
         val sharedSecret =
             doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(publicKey, conversation.personalKeyPair.privateKey)
         val derivedKeyPair = doubleRatchetKeyRepository.deriveKeys(conversation.receiveChainKey!!, sharedSecret)

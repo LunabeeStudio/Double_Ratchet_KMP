@@ -1,6 +1,6 @@
 package studio.lunabee.doubleratchet.model
 
 class AsymmetricKeyPair(
-    val publicKey: ByteArray,
-    val privateKey: ByteArray,
+    val publicKey: PublicKey,
+    val privateKey: PrivateKey,
 )

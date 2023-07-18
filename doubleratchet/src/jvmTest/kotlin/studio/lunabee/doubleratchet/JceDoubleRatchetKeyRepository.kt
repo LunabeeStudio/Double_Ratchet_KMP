@@ -5,6 +5,8 @@ import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.ChainKey
 import studio.lunabee.doubleratchet.model.DerivedKeyPair
 import studio.lunabee.doubleratchet.model.MessageKey
+import studio.lunabee.doubleratchet.model.PrivateKey
+import studio.lunabee.doubleratchet.model.PublicKey
 import studio.lunabee.doubleratchet.model.SharedSecret
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
@@ -33,17 +35,17 @@ class JceDoubleRatchetKeyRepository(
         keyPairGenerator.initialize(ecSpec, secureRandom)
         val javaKeyPair = keyPairGenerator.generateKeyPair()
         return AsymmetricKeyPair(
-            publicKey = javaKeyPair.public.encoded,
-            privateKey = javaKeyPair.private.encoded,
+            publicKey = PublicKey(javaKeyPair.public.encoded),
+            privateKey = PrivateKey(javaKeyPair.private.encoded),
         )
     }
 
     override suspend fun generateChainKey(): ChainKey = ChainKey.random(random)
 
-    override suspend fun createDiffieHellmanSharedSecret(publicKey: ByteArray, privateKey: ByteArray): SharedSecret {
+    override suspend fun createDiffieHellmanSharedSecret(publicKey: PublicKey, privateKey: PrivateKey): SharedSecret {
         val keyFactory = KeyFactory.getInstance(ALGORITHM_EC)
-        val contactPublicKey = keyFactory.generatePublic(X509EncodedKeySpec(publicKey))
-        val localPrivateKey = keyFactory.generatePrivate(PKCS8EncodedKeySpec(privateKey))
+        val contactPublicKey = keyFactory.generatePublic(X509EncodedKeySpec(publicKey.value))
+        val localPrivateKey = keyFactory.generatePrivate(PKCS8EncodedKeySpec(privateKey.value))
         val keyAgreement = KeyAgreement.getInstance(ALGORITHM_EC_DH)
         keyAgreement.init(localPrivateKey)
         keyAgreement.doPhase(contactPublicKey, true)

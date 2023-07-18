@@ -5,7 +5,7 @@ data class Conversation(
     val personalKeyPair: AsymmetricKeyPair,
     val sendChainKey: ChainKey? = null,
     val receiveChainKey: ChainKey? = null,
-    val contactPublicKey: ByteArray? = null,
+    val contactPublicKey: PublicKey? = null,
     val lastMessageReceivedType: MessageType? = null,
     val sentLastMessageData: MessageConversationCounter? = null,
     val receivedLastMessageData: MessageConversationCounter? = null,
@@ -28,10 +28,7 @@ data class Conversation(
         if (personalKeyPair != other.personalKeyPair) return false
         if (sendChainKey != other.sendChainKey) return false
         if (receiveChainKey != other.receiveChainKey) return false
-        if (contactPublicKey != null) {
-            if (other.contactPublicKey == null) return false
-            if (!contactPublicKey.contentEquals(other.contactPublicKey)) return false
-        } else if (other.contactPublicKey != null) return false
+        if (contactPublicKey != other.contactPublicKey) return false
         if (lastMessageReceivedType != other.lastMessageReceivedType) return false
         if (sentLastMessageData != other.sentLastMessageData) return false
         return receivedLastMessageData == other.receivedLastMessageData
@@ -42,7 +39,7 @@ data class Conversation(
         result = 31 * result + personalKeyPair.hashCode()
         result = 31 * result + (sendChainKey?.hashCode() ?: 0)
         result = 31 * result + (receiveChainKey?.hashCode() ?: 0)
-        result = 31 * result + (contactPublicKey?.contentHashCode() ?: 0)
+        result = 31 * result + (contactPublicKey?.hashCode() ?: 0)
         result = 31 * result + (lastMessageReceivedType?.hashCode() ?: 0)
         result = 31 * result + (sentLastMessageData?.hashCode() ?: 0)
         result = 31 * result + (receivedLastMessageData?.hashCode() ?: 0)
