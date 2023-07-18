@@ -21,7 +21,9 @@ data class Conversation(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is Conversation) return false
+        if (other == null || this::class != other::class) return false
+
+        other as Conversation
 
         if (id != other.id) return false
         if (!personalPublicKey.contentEquals(other.personalPublicKey)) return false
@@ -40,9 +42,7 @@ data class Conversation(
         } else if (other.contactPublicKey != null) return false
         if (lastMessageReceivedType != other.lastMessageReceivedType) return false
         if (sentLastMessageData != other.sentLastMessageData) return false
-        if (receivedLastMessageData != other.receivedLastMessageData) return false
-
-        return true
+        return receivedLastMessageData == other.receivedLastMessageData
     }
 
     override fun hashCode(): Int {

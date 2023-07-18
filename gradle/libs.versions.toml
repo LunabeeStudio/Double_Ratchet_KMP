@@ -6,7 +6,7 @@
 
 [plugins]
 
-
+detekt = { id = "io.gitlab.arturbosch.detekt", version = "_" }
 
 [versions]
 
@@ -18,3 +18,4 @@ junit = { module = "org.junit.jupiter:junit-jupiter-api", version = "_" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version = "_" }
 kotlinx-coroutine-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version = "_" }
 bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version = "_" }
+detekt-formating = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version = "_" }
