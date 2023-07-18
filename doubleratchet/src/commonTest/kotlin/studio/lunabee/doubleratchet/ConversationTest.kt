@@ -14,10 +14,7 @@ import kotlin.test.assertFailsWith
 class ConversationTest {
 
     companion object {
-        private val seed: Int = Random.nextInt().also {
-            println("Random seed = $it")
-        }
-        private val random: Random = Random(seed)
+        private val random: Random = RandomProviderTest.random
     }
 
     /**

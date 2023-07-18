@@ -6,7 +6,7 @@ import studio.lunabee.doubleratchet.model.Conversation
 import studio.lunabee.doubleratchet.model.DoubleRatchetError
 import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.model.InvitationData
-import studio.lunabee.doubleratchet.model.LastMessageConversationData
+import studio.lunabee.doubleratchet.model.MessageConversationCounter
 import studio.lunabee.doubleratchet.model.MessageHeader
 import studio.lunabee.doubleratchet.model.SendMessageData
 import studio.lunabee.doubleratchet.model.createRandomUUID
@@ -77,9 +77,9 @@ class DoubleRatchetEngine(
         val newConversation = conversation.copy(
             personalPublicKey = newKeyPair.publicKey,
             personalPrivateKey = newKeyPair.privateKey,
-            sentLastMessageData = LastMessageConversationData(
-                messageNumber = conversation.sentLastMessageData?.messageNumber?.plus(1) ?: 0,
-                sequenceNumber = 0,
+            sentLastMessageData = MessageConversationCounter(
+                message = conversation.sentLastMessageData?.message?.inc() ?: 0u,
+                sequence = 0u,
             ),
             lastMessageReceivedType = Conversation.MessageType.Sent,
             sendChainKey = derivedKeyPair.nextChainKey,
@@ -88,8 +88,10 @@ class DoubleRatchetEngine(
         val chainKeyToSend = doubleRatchetLocalDatasource.retrieveMessageKey(conversation.id.uuidString())
         return SendMessageData(
             messageHeader = MessageHeader(
-                messageNumber = conversation.sentLastMessageData?.messageNumber?.plus(1) ?: 0,
-                sequenceMessageNumber = 0,
+                counter = MessageConversationCounter(
+                    message = conversation.sentLastMessageData?.message?.inc() ?: 0u,
+                    sequence = 0u,
+                ),
                 publicKey = newKeyPair.publicKey,
                 chainKey = chainKeyToSend,
             ),
@@ -101,17 +103,19 @@ class DoubleRatchetEngine(
         val derivedKeyPair = doubleRatchetKeyRepository.deriveKey(conversation.sendChainKey!!)
         val newConversation = conversation.copy(
             sendChainKey = derivedKeyPair.nextChainKey,
-            sentLastMessageData = LastMessageConversationData(
-                messageNumber = conversation.sentLastMessageData?.messageNumber?.plus(1) ?: 0,
-                sequenceNumber = conversation.sentLastMessageData?.sequenceNumber?.plus(1) ?: 0,
+            sentLastMessageData = MessageConversationCounter(
+                message = conversation.sentLastMessageData?.message?.inc() ?: 0u,
+                sequence = conversation.sentLastMessageData?.sequence?.inc() ?: 0u,
             ),
         )
         doubleRatchetLocalDatasource.saveOrUpdateConversation(newConversation)
         val chainKeyToSend = doubleRatchetLocalDatasource.retrieveMessageKey(conversation.id.uuidString())
         return SendMessageData(
             messageHeader = MessageHeader(
-                messageNumber = conversation.sentLastMessageData?.messageNumber?.plus(1) ?: 0,
-                sequenceMessageNumber = conversation.sentLastMessageData?.sequenceNumber?.plus(1) ?: 0,
+                counter = MessageConversationCounter(
+                    message = conversation.sentLastMessageData?.message?.inc() ?: 0u,
+                    sequence = conversation.sentLastMessageData?.sequence?.inc() ?: 0u,
+                ),
                 publicKey = conversation.personalPublicKey,
                 chainKey = chainKeyToSend,
             ),
@@ -130,32 +134,34 @@ class DoubleRatchetEngine(
             conversation = setupConversationOnReceiveMessage(messageHeader, conversation)
         }
 
-        // If the messageKey has already been generated
-        if ((conversation.receivedLastMessageData?.messageNumber ?: -1) >= messageHeader.messageNumber) {
+        val isMessageKeyAlreadyGenerated = conversation.receivedLastMessageData?.message?.let { messageCount ->
+            messageCount >= messageHeader.counter.message
+        } ?: false
+        if (isMessageKeyAlreadyGenerated) {
             val retrieveMessageKey = doubleRatchetLocalDatasource.retrieveMessageKey(
                 id = getMessageKeyId(
                     conversationId,
-                    messageHeader.messageNumber,
+                    messageHeader.counter.message,
                 ),
             ) ?: throw DoubleRatchetError(DoubleRatchetError.Type.MessageKeyNotFound)
             doubleRatchetLocalDatasource.deleteMessageKey(
                 getMessageKeyId(
                     conversationId,
-                    messageHeader.messageNumber,
+                    messageHeader.counter.message,
                 ),
             )
             return retrieveMessageKey
         }
 
-        val lastMessageNumber = conversation.receivedLastMessageData?.messageNumber ?: -1
+        val lastMessageNumber = conversation.receivedLastMessageData?.message
 
-        val newSequenceMessageNumber: Int? = if (messageHeader.publicKey.contentEquals(conversation.contactPublicKey)) {
+        val newSequenceMessageNumber: UInt? = if (messageHeader.publicKey.contentEquals(conversation.contactPublicKey)) {
             null
         } else {
-            messageHeader.messageNumber - messageHeader.sequenceMessageNumber
+            messageHeader.counter.message - messageHeader.counter.sequence
         }
 
-        var messageNumber: Int = lastMessageNumber + 1
+        var messageNumber = lastMessageNumber?.inc() ?: 0u
         var messageKey: ByteArray? = null
         while (messageKey == null) {
             val currentMessageKey = if (messageNumber == newSequenceMessageNumber) {
@@ -165,7 +171,7 @@ class DoubleRatchetEngine(
             }
             conversation = doubleRatchetLocalDatasource.getConversation(conversationId)
                 ?: throw DoubleRatchetError(DoubleRatchetError.Type.ConversationNotFound)
-            if (messageNumber == messageHeader.messageNumber) {
+            if (messageNumber == messageHeader.counter.message) {
                 messageKey = currentMessageKey
             } else {
                 doubleRatchetLocalDatasource.saveMessageKey(
@@ -184,9 +190,9 @@ class DoubleRatchetEngine(
         val derivedKeyPair = doubleRatchetKeyRepository.deriveKey(conversation.receiveChainKey!!)
         val newConversation = conversation.copy(
             receiveChainKey = derivedKeyPair.nextChainKey,
-            receivedLastMessageData = LastMessageConversationData(
-                messageNumber = conversation.receivedLastMessageData?.messageNumber?.plus(1) ?: 1,
-                sequenceNumber = conversation.receivedLastMessageData?.sequenceNumber?.plus(1) ?: 1,
+            receivedLastMessageData = MessageConversationCounter(
+                message = conversation.receivedLastMessageData?.message?.inc() ?: 1u,
+                sequence = conversation.receivedLastMessageData?.sequence?.inc() ?: 1u,
             ),
         )
         doubleRatchetLocalDatasource.saveOrUpdateConversation(newConversation)
@@ -200,9 +206,9 @@ class DoubleRatchetEngine(
         val newConversation = conversation.copy(
             receiveChainKey = derivedKeyPair.nextChainKey,
             contactPublicKey = publicKey,
-            receivedLastMessageData = LastMessageConversationData(
-                messageNumber = conversation.receivedLastMessageData?.messageNumber?.plus(1) ?: 0,
-                sequenceNumber = 0,
+            receivedLastMessageData = MessageConversationCounter(
+                message = conversation.receivedLastMessageData?.message?.inc() ?: 0u,
+                sequence = 0u,
             ),
             lastMessageReceivedType = Conversation.MessageType.Received,
         )
@@ -220,7 +226,7 @@ class DoubleRatchetEngine(
         return conversation.copy(sendChainKey = sendChainKey, receiveChainKey = receiveChainKey)
     }
 
-    private fun getMessageKeyId(conversationId: DoubleRatchetUUID, messageNumber: Int): String {
+    private fun getMessageKeyId(conversationId: DoubleRatchetUUID, messageNumber: UInt): String {
         return "${conversationId.uuidString()} - $messageNumber"
     }
 }

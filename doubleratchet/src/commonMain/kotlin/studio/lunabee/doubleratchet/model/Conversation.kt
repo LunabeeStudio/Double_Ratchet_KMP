@@ -8,8 +8,8 @@ data class Conversation(
     val receiveChainKey: ByteArray? = null,
     val contactPublicKey: ByteArray? = null,
     val lastMessageReceivedType: MessageType? = null,
-    val sentLastMessageData: LastMessageConversationData? = null,
-    val receivedLastMessageData: LastMessageConversationData? = null,
+    val sentLastMessageData: MessageConversationCounter? = null,
+    val receivedLastMessageData: MessageConversationCounter? = null,
 ) {
     fun isReadyForMessageSending(): Boolean {
         return sendChainKey != null && contactPublicKey != null
