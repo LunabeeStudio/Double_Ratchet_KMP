@@ -1,12 +1,17 @@
 plugins {
     kotlin("multiplatform")
     id("java-library")
+    `lunabee-publish`
 }
+
+group = "studio.lunabee.doubleratchet"
+description = "Kotlin multiplatform implementation of double ratchet algorithm"
+version = "0.1.0"
 
 kotlin {
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "17"
+            kotlinOptions.jvmTarget = ProjectConfig.JDK_VERSION.toString()
         }
         withJava()
     }
