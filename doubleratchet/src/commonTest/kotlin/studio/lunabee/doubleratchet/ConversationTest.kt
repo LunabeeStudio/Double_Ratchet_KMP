@@ -2,11 +2,11 @@ package studio.lunabee.doubleratchet
 
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
-import studio.lunabee.doubleratchet.model.ChainKey
+import studio.lunabee.doubleratchet.model.DRChainKey
 import studio.lunabee.doubleratchet.model.DoubleRatchetError
 import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.model.InvitationData
-import studio.lunabee.doubleratchet.model.SharedSecret
+import studio.lunabee.doubleratchet.model.DRSharedSecret
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -29,8 +29,8 @@ class ConversationTest {
         val cryptoRepository2 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val keyPairAlice = cryptoRepository1.generateKeyPair()
         val keyPairBob = cryptoRepository2.generateKeyPair()
-        val sharedSecretAlice = SharedSecret(random.nextBytes(SharedSecret.DEFAULT_SECRET_LENGTH_BYTE))
-        val sharedSecretBob = SharedSecret(random.nextBytes(SharedSecret.DEFAULT_SECRET_LENGTH_BYTE))
+        val sharedSecretAlice = DRSharedSecret(random.nextBytes(DRSharedSecret.DEFAULT_SECRET_LENGTH_BYTE))
+        val sharedSecretBob = DRSharedSecret(random.nextBytes(DRSharedSecret.DEFAULT_SECRET_LENGTH_BYTE))
 
         cryptoRepository1.createDiffieHellmanSharedSecret(keyPairBob.publicKey, keyPairAlice.privateKey, sharedSecretAlice)
         cryptoRepository2.createDiffieHellmanSharedSecret(keyPairAlice.publicKey, keyPairBob.privateKey, sharedSecretBob)
@@ -44,7 +44,7 @@ class ConversationTest {
      */
     @Test
     fun `KDF algorithm test`(): TestResult = runTest {
-        val chainKey = ChainKey.random(random)
+        val chainKey = DRChainKey.random(random)
         val cryptoRepository1 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val cryptoRepository2 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val value1 = cryptoRepository1.deriveKey(chainKey)
@@ -60,8 +60,8 @@ class ConversationTest {
      */
     @Test
     fun `Double Ratchet KDF+DH algorithm test`(): TestResult = runTest {
-        val chainKey = ChainKey.random(random)
-        val sharedSecret = SharedSecret(random.nextBytes(SharedSecret.DEFAULT_SECRET_LENGTH_BYTE))
+        val chainKey = DRChainKey.random(random)
+        val sharedSecret = DRSharedSecret(random.nextBytes(DRSharedSecret.DEFAULT_SECRET_LENGTH_BYTE))
         val cryptoRepository1 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val cryptoRepository2 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val value1 = cryptoRepository1.deriveKeys(chainKey, sharedSecret)

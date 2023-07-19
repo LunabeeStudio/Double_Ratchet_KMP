@@ -2,11 +2,11 @@ package studio.lunabee.doubleratchet
 
 import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
-import studio.lunabee.doubleratchet.model.ChainKey
+import studio.lunabee.doubleratchet.model.DRChainKey
 import studio.lunabee.doubleratchet.model.DerivedKeyPair
-import studio.lunabee.doubleratchet.model.PrivateKey
-import studio.lunabee.doubleratchet.model.PublicKey
-import studio.lunabee.doubleratchet.model.SharedSecret
+import studio.lunabee.doubleratchet.model.DRPrivateKey
+import studio.lunabee.doubleratchet.model.DRPublicKey
+import studio.lunabee.doubleratchet.model.DRSharedSecret
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
 import java.security.SecureRandom
@@ -34,18 +34,18 @@ class JceDoubleRatchetKeyRepository(
         keyPairGenerator.initialize(ecSpec, secureRandom)
         val javaKeyPair = keyPairGenerator.generateKeyPair()
         return AsymmetricKeyPair(
-            publicKey = PublicKey(javaKeyPair.public.encoded),
-            privateKey = PrivateKey(javaKeyPair.private.encoded),
+            publicKey = DRPublicKey(javaKeyPair.public.encoded),
+            privateKey = DRPrivateKey(javaKeyPair.private.encoded),
         )
     }
 
-    override suspend fun generateChainKey(): ChainKey = ChainKey.random(random)
+    override suspend fun generateChainKey(): DRChainKey = DRChainKey.random(random)
 
     override suspend fun createDiffieHellmanSharedSecret(
-        publicKey: PublicKey,
-        privateKey: PrivateKey,
-        out: SharedSecret,
-    ): SharedSecret {
+        publicKey: DRPublicKey,
+        privateKey: DRPrivateKey,
+        out: DRSharedSecret,
+    ): DRSharedSecret {
         val keyFactory = KeyFactory.getInstance(ALGORITHM_EC)
         val contactPublicKey = keyFactory.generatePublic(X509EncodedKeySpec(publicKey.value))
         val localPrivateKey = keyFactory.generatePrivate(PKCS8EncodedKeySpec(privateKey.value))
@@ -56,13 +56,13 @@ class JceDoubleRatchetKeyRepository(
         return out
     }
 
-    override suspend fun deriveKey(key: ChainKey, out: DerivedKeyPair): DerivedKeyPair {
+    override suspend fun deriveKey(key: DRChainKey, out: DerivedKeyPair): DerivedKeyPair {
         hashEngine.deriveKey(key.value, messageSalt, out.messageKey.value)
         hashEngine.deriveKey(key.value, chainSalt, out.chainKey.value)
         return out
     }
 
-    override suspend fun deriveKeys(chainKey: ChainKey, sharedSecret: SharedSecret, out: DerivedKeyPair): DerivedKeyPair {
+    override suspend fun deriveKeys(chainKey: DRChainKey, sharedSecret: DRSharedSecret, out: DerivedKeyPair): DerivedKeyPair {
         val derivedWithSharedSecretKey = hashEngine.deriveKey(chainKey.value, sharedSecret.value)
         hashEngine.deriveKey(derivedWithSharedSecretKey, messageSalt, out.messageKey.value)
         hashEngine.deriveKey(derivedWithSharedSecretKey, chainSalt, out.chainKey.value)

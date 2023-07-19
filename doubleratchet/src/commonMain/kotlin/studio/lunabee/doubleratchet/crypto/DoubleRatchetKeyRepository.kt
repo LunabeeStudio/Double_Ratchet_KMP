@@ -1,12 +1,12 @@
 package studio.lunabee.doubleratchet.crypto
 
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
-import studio.lunabee.doubleratchet.model.ChainKey
+import studio.lunabee.doubleratchet.model.DRChainKey
 import studio.lunabee.doubleratchet.model.DerivedKeyPair
-import studio.lunabee.doubleratchet.model.MessageKey
-import studio.lunabee.doubleratchet.model.PrivateKey
-import studio.lunabee.doubleratchet.model.PublicKey
-import studio.lunabee.doubleratchet.model.SharedSecret
+import studio.lunabee.doubleratchet.model.DRMessageKey
+import studio.lunabee.doubleratchet.model.DRPrivateKey
+import studio.lunabee.doubleratchet.model.DRPublicKey
+import studio.lunabee.doubleratchet.model.DRSharedSecret
 
 interface DoubleRatchetKeyRepository {
     /**
@@ -15,33 +15,33 @@ interface DoubleRatchetKeyRepository {
     suspend fun generateKeyPair(): AsymmetricKeyPair
 
     /**
-     * Generate a [ChainKey] for new conversation
+     * Generate a [DRChainKey] for new conversation
      */
-    suspend fun generateChainKey(): ChainKey
+    suspend fun generateChainKey(): DRChainKey
 
     /**
-     * Generate a [SharedSecret] from a contact public key and a personal private key in param array [out]
+     * Generate a [DRSharedSecret] from a contact public key and a personal private key in param array [out]
      */
     suspend fun createDiffieHellmanSharedSecret(
-        publicKey: PublicKey,
-        privateKey: PrivateKey,
-        out: SharedSecret = SharedSecret.empty(),
-    ): SharedSecret
+        publicKey: DRPublicKey,
+        privateKey: DRPrivateKey,
+        out: DRSharedSecret = DRSharedSecret.empty(),
+    ): DRSharedSecret
 
     /**
-     * Derive a [ChainKey] with a Key Derivation Function and get a message key and a new chainKey
+     * Derive a [DRChainKey] with a Key Derivation Function and get a message key and a new chainKey
      */
     suspend fun deriveKey(
-        key: ChainKey,
-        out: DerivedKeyPair = DerivedKeyPair(MessageKey.empty(), ChainKey.empty()),
+        key: DRChainKey,
+        out: DerivedKeyPair = DerivedKeyPair(DRMessageKey.empty(), DRChainKey.empty()),
     ): DerivedKeyPair
 
     /**
-     * Derive [ChainKey] and [SharedSecret] with a Key Derivation Function and get a message key and a new chainKey
+     * Derive [DRChainKey] and [DRSharedSecret] with a Key Derivation Function and get a message key and a new chainKey
      */
     suspend fun deriveKeys(
-        chainKey: ChainKey,
-        sharedSecret: SharedSecret,
-        out: DerivedKeyPair = DerivedKeyPair(MessageKey.empty(), ChainKey.empty()),
+        chainKey: DRChainKey,
+        sharedSecret: DRSharedSecret,
+        out: DerivedKeyPair = DerivedKeyPair(DRMessageKey.empty(), DRChainKey.empty()),
     ): DerivedKeyPair
 }

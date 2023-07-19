@@ -5,7 +5,7 @@ import studio.lunabee.doubleratchet.utils.randomize
 /**
  * Critical cryptographic material which must be clean after use
  */
-interface DHCriticalMaterial {
+interface DRCriticalKey {
     val value: ByteArray
 
     fun destroy() {
@@ -13,7 +13,7 @@ interface DHCriticalMaterial {
     }
 }
 
-inline fun <T : DHCriticalMaterial, U> T.use(block: (T) -> U): U = try {
+inline fun <T : DRCriticalKey, U> T.use(block: (T) -> U): U = try {
     block(this)
 } finally {
     this.destroy()

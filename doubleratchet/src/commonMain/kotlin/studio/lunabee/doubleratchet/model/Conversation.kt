@@ -3,20 +3,20 @@ package studio.lunabee.doubleratchet.model
 class Conversation private constructor(
     val id: DoubleRatchetUUID,
     personalKeyPair: AsymmetricKeyPair,
-    sendChainKey: ChainKey? = null,
-    receiveChainKey: ChainKey? = null,
-    contactPublicKey: PublicKey? = null,
+    sendChainKey: DRChainKey? = null,
+    receiveChainKey: DRChainKey? = null,
+    contactPublicKey: DRPublicKey? = null,
     lastMessageReceivedType: MessageType? = null,
     sentLastMessageData: MessageConversationCounter? = null,
     receivedLastMessageNumber: UInt? = null,
 ) {
     var personalKeyPair: AsymmetricKeyPair = personalKeyPair
         internal set
-    var sendChainKey: ChainKey? = sendChainKey
+    var sendChainKey: DRChainKey? = sendChainKey
         internal set
-    var receiveChainKey: ChainKey? = receiveChainKey
+    var receiveChainKey: DRChainKey? = receiveChainKey
         internal set
-    var contactPublicKey: PublicKey? = contactPublicKey
+    var contactPublicKey: DRPublicKey? = contactPublicKey
         internal set
     var lastMessageReceivedType: MessageType? = lastMessageReceivedType
         internal set
@@ -46,9 +46,9 @@ class Conversation private constructor(
         fun createFromInvitation(
             id: DoubleRatchetUUID,
             personalKeyPair: AsymmetricKeyPair,
-            sendChainKey: ChainKey,
-            receiveChainKey: ChainKey,
-            contactPublicKey: PublicKey,
+            sendChainKey: DRChainKey,
+            receiveChainKey: DRChainKey,
+            contactPublicKey: DRPublicKey,
         ): Conversation = Conversation(
             id = id,
             personalKeyPair = personalKeyPair,
