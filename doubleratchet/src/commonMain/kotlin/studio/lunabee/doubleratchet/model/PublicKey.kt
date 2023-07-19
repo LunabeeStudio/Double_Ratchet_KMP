@@ -10,12 +10,4 @@ value class PublicKey internal constructor(override val value: ByteArray) : DHCr
     fun contentEquals(other: PublicKey?): Boolean {
         return other?.equals(value) == true
     }
-
-    init {
-        check(value.size == KEY_LENGTH_BYTE)
-    }
-
-    companion object {
-        private const val KEY_LENGTH_BYTE: Int = 91
-    }
 }

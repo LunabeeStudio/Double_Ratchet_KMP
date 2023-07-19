@@ -10,19 +10,14 @@ import kotlin.random.Random
  */
 @JvmInline
 value class ChainKey internal constructor(override val value: ByteArray) : DHCriticalMaterial {
-
-    init {
-        check(value.size == KEY_LENGTH_BYTE)
-    }
-
     companion object {
-        private const val KEY_LENGTH_BYTE: Int = 32
+        private const val DEFAULT_KEY_LENGTH_BYTE: Int = 32
 
         /**
          * @return a random [ChainKey] using [random] param as source of randomness
          */
-        fun random(random: Random): ChainKey = ChainKey(random.nextBytes(KEY_LENGTH_BYTE))
+        fun random(random: Random, length: Int = DEFAULT_KEY_LENGTH_BYTE): ChainKey = ChainKey(random.nextBytes(length))
 
-        fun empty(): ChainKey = ChainKey(ByteArray(KEY_LENGTH_BYTE))
+        fun empty(length: Int = DEFAULT_KEY_LENGTH_BYTE): ChainKey = ChainKey(ByteArray(length))
     }
 }

@@ -29,8 +29,8 @@ class ConversationTest {
         val cryptoRepository2 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val keyPairAlice = cryptoRepository1.generateKeyPair()
         val keyPairBob = cryptoRepository2.generateKeyPair()
-        val sharedSecretAlice = SharedSecret(random.nextBytes(SharedSecret.SECRET_LENGTH_BYTE))
-        val sharedSecretBob = SharedSecret(random.nextBytes(SharedSecret.SECRET_LENGTH_BYTE))
+        val sharedSecretAlice = SharedSecret(random.nextBytes(SharedSecret.DEFAULT_SECRET_LENGTH_BYTE))
+        val sharedSecretBob = SharedSecret(random.nextBytes(SharedSecret.DEFAULT_SECRET_LENGTH_BYTE))
 
         cryptoRepository1.createDiffieHellmanSharedSecret(keyPairBob.publicKey, keyPairAlice.privateKey, sharedSecretAlice)
         cryptoRepository2.createDiffieHellmanSharedSecret(keyPairAlice.publicKey, keyPairBob.privateKey, sharedSecretBob)
@@ -61,7 +61,7 @@ class ConversationTest {
     @Test
     fun `Double Ratchet KDF+DH algorithm test`(): TestResult = runTest {
         val chainKey = ChainKey.random(random)
-        val sharedSecret = SharedSecret(random.nextBytes(SharedSecret.SECRET_LENGTH_BYTE))
+        val sharedSecret = SharedSecret(random.nextBytes(SharedSecret.DEFAULT_SECRET_LENGTH_BYTE))
         val cryptoRepository1 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val cryptoRepository2 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val value1 = cryptoRepository1.deriveKeys(chainKey, sharedSecret)

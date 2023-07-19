@@ -7,13 +7,9 @@ import kotlin.jvm.JvmInline
  */
 @JvmInline
 value class SharedSecret(override val value: ByteArray) : DHCriticalMaterial {
-    init {
-        check(value.size == SECRET_LENGTH_BYTE)
-    }
-
     companion object {
-        const val SECRET_LENGTH_BYTE: Int = 32
+        const val DEFAULT_SECRET_LENGTH_BYTE: Int = 32
 
-        fun empty(): SharedSecret = SharedSecret(ByteArray(SECRET_LENGTH_BYTE))
+        fun empty(length: Int = DEFAULT_SECRET_LENGTH_BYTE): SharedSecret = SharedSecret(ByteArray(length))
     }
 }

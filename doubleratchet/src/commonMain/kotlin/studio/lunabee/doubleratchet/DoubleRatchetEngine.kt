@@ -196,7 +196,7 @@ class DoubleRatchetEngine(
 
         var messageNumber = lastMessageNumber?.inc() ?: 0u
         var messageKey: MessageKey? = null
-        val sharedSecret = lazy { SharedSecret(ByteArray(SharedSecret.SECRET_LENGTH_BYTE)) }
+        val sharedSecret = lazy { SharedSecret.empty() }
         val derivedKeyPair = DerivedKeyPair.empty()
         while (messageKey == null) {
             if (messageNumber == newSequenceMessageNumber) {
