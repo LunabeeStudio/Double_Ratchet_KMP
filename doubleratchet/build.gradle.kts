@@ -17,7 +17,6 @@
 plugins {
     kotlin("multiplatform")
     id("java-library")
-    alias(libs.plugins.detekt)
     `lunabee-publish`
 }
 
@@ -81,30 +80,5 @@ kotlin {
             iosArm64Test.dependsOn(this)
             iosSimulatorArm64Test.dependsOn(this)
         }
-    }
-}
-
-dependencies {
-    detektPlugins(libs.detekt.formating)
-}
-
-detekt {
-    parallel = true
-    source.from(files(rootProject.rootDir))
-    buildUponDefaultConfig = true
-    config.from(files("${rootProject.rootDir}/lunabee-detekt-config.yml"))
-    autoCorrect = true
-    ignoreFailures = true
-}
-
-tasks.detekt.configure {
-    outputs.upToDateWhen { false }
-    exclude("**/build/**")
-    reports {
-        xml.required.set(true)
-        xml.outputLocation.set(file("$buildDir/reports/detekt/detekt-report.xml"))
-
-        html.required.set(true)
-        html.outputLocation.set(file("$buildDir/reports/detekt/detekt-report.html"))
     }
 }

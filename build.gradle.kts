@@ -17,8 +17,34 @@
 plugins {
     // trick: for the same plugin versions in all sub-modules
     kotlin("multiplatform").apply(false)
+    alias(libs.plugins.detekt)
 }
 
 tasks.register("clean", Delete::class) {
     delete(rootProject.buildDir)
+}
+
+dependencies {
+    detektPlugins(libs.detekt.formating)
+}
+
+detekt {
+    parallel = true
+    source.from(files(rootProject.rootDir))
+    buildUponDefaultConfig = true
+    config.from(files("${rootProject.rootDir}/lunabee-detekt-config.yml"))
+    autoCorrect = true
+    ignoreFailures = true
+}
+
+tasks.detekt.configure {
+    outputs.upToDateWhen { false }
+    exclude("**/build/**")
+    reports {
+        xml.required.set(true)
+        xml.outputLocation.set(file("$buildDir/reports/detekt/detekt-report.xml"))
+
+        html.required.set(true)
+        html.outputLocation.set(file("$buildDir/reports/detekt/detekt-report.html"))
+    }
 }
