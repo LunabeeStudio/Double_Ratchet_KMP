@@ -22,7 +22,7 @@ plugins {
 
 group = "studio.lunabee.doubleratchet"
 description = "Kotlin multiplatform implementation of double ratchet algorithm"
-version = "0.1.0"
+version = "0.1.1"
 
 kotlin {
     jvm {
