@@ -15,7 +15,7 @@ import studio.lunabee.doubleratchet.storage.DoubleRatchetLocalDatasource
  */
 class PlainMapDoubleRatchetLocalDatasource : DoubleRatchetLocalDatasource {
     val messageKeys: MutableMap<String, MessageKey> = mutableMapOf()
-    val chainKeys: MutableMap<String, ChainKey> = mutableMapOf()
+    val chainKeys: MutableMap<DoubleRatchetUUID, ChainKey> = mutableMapOf()
     val conversations: MutableMap<DoubleRatchetUUID, Conversation> = mutableMapOf()
 
     override suspend fun saveOrUpdateConversation(conversation: Conversation) {
@@ -42,7 +42,7 @@ class PlainMapDoubleRatchetLocalDatasource : DoubleRatchetLocalDatasource {
         messageKeys[id] = MessageKey(key.value.copyOf())
     }
 
-    override suspend fun saveChainKey(id: String, key: ChainKey) {
+    override suspend fun saveChainKey(id: DoubleRatchetUUID, key: ChainKey) {
         chainKeys[id] = ChainKey(key.value.copyOf())
     }
 
@@ -50,11 +50,11 @@ class PlainMapDoubleRatchetLocalDatasource : DoubleRatchetLocalDatasource {
         return messageKeys.remove(id)
     }
 
-    override suspend fun retrieveChainKey(id: String): ChainKey? {
+    override suspend fun retrieveChainKey(id: DoubleRatchetUUID): ChainKey? {
         return chainKeys[id]
     }
 
-    override suspend fun deleteChainKey(id: String) {
+    override suspend fun deleteChainKey(id: DoubleRatchetUUID) {
         chainKeys.remove(id)
     }
 }

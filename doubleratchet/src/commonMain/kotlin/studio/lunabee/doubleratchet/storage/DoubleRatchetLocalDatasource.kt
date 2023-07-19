@@ -16,7 +16,7 @@ interface DoubleRatchetLocalDatasource {
     /**
      * Save the initial chain key
      */
-    suspend fun saveChainKey(id: String, key: ChainKey)
+    suspend fun saveChainKey(id: DoubleRatchetUUID, key: ChainKey)
 
     /**
      * Return and delete [MessageKey] with id [id]
@@ -26,10 +26,10 @@ interface DoubleRatchetLocalDatasource {
     /**
      * @return The initial chain key for initialization (null after initialization done)
      */
-    suspend fun retrieveChainKey(id: String): ChainKey?
+    suspend fun retrieveChainKey(id: DoubleRatchetUUID): ChainKey?
 
     /**
      * Delete the initial chain key
      */
-    suspend fun deleteChainKey(id: String)
+    suspend fun deleteChainKey(id: DoubleRatchetUUID)
 }
