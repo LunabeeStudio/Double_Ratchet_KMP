@@ -58,7 +58,7 @@ class DoubleRatchetCryptoRepositoryImpl : DoubleRatchetCryptoRepository {
     }
 
     private companion object {
-        val hashEngine = HashEngine()
+        val hashEngine = BouncyCastleHKDFHashEngine()
 
         val random = SecureRandom()
         const val DEFAULT_SALT_LENGTH_BYTE: Int = 32
