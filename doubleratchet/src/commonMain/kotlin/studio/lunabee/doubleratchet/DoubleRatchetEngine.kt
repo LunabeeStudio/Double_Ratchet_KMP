@@ -161,7 +161,7 @@ class DoubleRatchetEngine(
             setupConversationOnReceiveMessage(messageHeader, conversation)
         }
 
-        val isMessageKeyAlreadyGenerated = conversation.receivedLastMessageData?.message?.let { messageCount ->
+        val isMessageKeyAlreadyGenerated = conversation.receivedLastMessageNumber?.let { messageCount ->
             messageCount >= messageHeader.counter.message
         } ?: false
 
@@ -186,7 +186,7 @@ class DoubleRatchetEngine(
         conversation: Conversation,
     ): MessageKey {
         var workingConversation = conversation
-        val lastMessageNumber = workingConversation.receivedLastMessageData?.message
+        val lastMessageNumber = workingConversation.receivedLastMessageNumber
 
         val newSequenceMessageNumber: UInt? = if (messageHeader.publicKey.contentEquals(workingConversation.contactPublicKey)) {
             null
@@ -233,10 +233,7 @@ class DoubleRatchetEngine(
         doubleRatchetKeyRepository.deriveKey(conversation.receiveChainKey!!, derivedKeyPair)
         conversation.apply {
             receiveChainKey = derivedKeyPair.chainKey
-            receivedLastMessageData = MessageConversationCounter(
-                message = conversation.receivedLastMessageData?.message?.inc() ?: 1u,
-                sequence = conversation.receivedLastMessageData?.sequence?.inc() ?: 1u,
-            )
+            receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 1u
         }
         doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
         derivedKeyPair.chainKey.destroy()
@@ -254,10 +251,7 @@ class DoubleRatchetEngine(
         conversation.apply {
             receiveChainKey = derivedKeyPair.chainKey
             contactPublicKey = publicKey
-            receivedLastMessageData = MessageConversationCounter(
-                message = conversation.receivedLastMessageData?.message?.inc() ?: 0u,
-                sequence = 0u,
-            )
+            receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 0u
             lastMessageReceivedType = Conversation.MessageType.Received
         }
         doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)

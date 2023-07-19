@@ -32,7 +32,7 @@ class PlainMapDoubleRatchetLocalDatasource : DoubleRatchetLocalDatasource {
             contactPublicKey = conversation.contactPublicKey?.value?.let { PublicKey(it.copyOf()) }
             lastMessageReceivedType = conversation.lastMessageReceivedType
             sentLastMessageData = conversation.sentLastMessageData
-            receivedLastMessageData = conversation.receivedLastMessageData
+            receivedLastMessageNumber = conversation.receivedLastMessageNumber
         }
     }
 

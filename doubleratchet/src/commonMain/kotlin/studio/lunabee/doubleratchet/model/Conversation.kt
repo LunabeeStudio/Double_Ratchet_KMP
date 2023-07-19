@@ -8,7 +8,7 @@ class Conversation private constructor(
     contactPublicKey: PublicKey? = null,
     lastMessageReceivedType: MessageType? = null,
     sentLastMessageData: MessageConversationCounter? = null,
-    receivedLastMessageData: MessageConversationCounter? = null,
+    receivedLastMessageNumber: UInt? = null,
 ) {
     var personalKeyPair: AsymmetricKeyPair = personalKeyPair
         internal set
@@ -22,7 +22,7 @@ class Conversation private constructor(
         internal set
     var sentLastMessageData: MessageConversationCounter? = sentLastMessageData
         internal set
-    var receivedLastMessageData: MessageConversationCounter? = receivedLastMessageData
+    var receivedLastMessageNumber: UInt? = receivedLastMessageNumber
         internal set
 
     fun isReadyForMessageSending(): Boolean {
