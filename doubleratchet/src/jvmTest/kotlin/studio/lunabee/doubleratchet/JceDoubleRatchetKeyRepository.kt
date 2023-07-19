@@ -71,7 +71,7 @@ class JceDoubleRatchetKeyRepository(
     }
 
     private companion object {
-        val hashEngine = JcePBKDF2HashEngine()
+        val hashEngine = BouncyCastleHKDFHashEngine()
 
         private const val NAMED_CURVE_SPEC = "secp256r1"
         private const val ALGORITHM_EC = "EC"
