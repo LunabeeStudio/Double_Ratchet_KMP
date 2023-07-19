@@ -172,3 +172,8 @@ style:
     active: false # https://detekt.dev/formatting.html#finalnewline
   UnusedPrivateMember:
     ignoreAnnotated: [ 'Preview' ]
+
+comments:
+  AbsentOrWrongFileLicense:
+    active: true
+    licenseTemplateFile: "lunabee-license.template"
