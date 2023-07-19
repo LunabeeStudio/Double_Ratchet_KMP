@@ -51,7 +51,7 @@ class ConversationTest {
         val value2 = cryptoRepository2.deriveKey(chainKey)
 
         assertContentEquals(value1.messageKey.value, value2.messageKey.value)
-        assertContentEquals(value1.nextChainKey.value, value2.nextChainKey.value)
+        assertContentEquals(value1.chainKey.value, value2.chainKey.value)
     }
 
     /**
@@ -68,7 +68,7 @@ class ConversationTest {
         val value2 = cryptoRepository2.deriveKeys(chainKey, sharedSecret)
 
         assertContentEquals(value1.messageKey.value, value2.messageKey.value)
-        assertContentEquals(value1.nextChainKey.value, value2.nextChainKey.value)
+        assertContentEquals(value1.chainKey.value, value2.chainKey.value)
     }
 
     @Test

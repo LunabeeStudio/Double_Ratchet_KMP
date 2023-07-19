@@ -22,5 +22,7 @@ value class ChainKey internal constructor(override val value: ByteArray) : DHCri
          * @return a random [ChainKey] using [random] param as source of randomness
          */
         fun random(random: Random): ChainKey = ChainKey(random.nextBytes(KEY_LENGTH_BYTE))
+
+        fun empty(): ChainKey = ChainKey(ByteArray(KEY_LENGTH_BYTE))
     }
 }

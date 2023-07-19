@@ -4,7 +4,6 @@ import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.ChainKey
 import studio.lunabee.doubleratchet.model.DerivedKeyPair
-import studio.lunabee.doubleratchet.model.MessageKey
 import studio.lunabee.doubleratchet.model.PrivateKey
 import studio.lunabee.doubleratchet.model.PublicKey
 import studio.lunabee.doubleratchet.model.SharedSecret
@@ -45,7 +44,7 @@ class JceDoubleRatchetKeyRepository(
     override suspend fun createDiffieHellmanSharedSecret(
         publicKey: PublicKey,
         privateKey: PrivateKey,
-        sharedSecret: SharedSecret,
+        out: SharedSecret,
     ): SharedSecret {
         val keyFactory = KeyFactory.getInstance(ALGORITHM_EC)
         val contactPublicKey = keyFactory.generatePublic(X509EncodedKeySpec(publicKey.value))
@@ -53,21 +52,21 @@ class JceDoubleRatchetKeyRepository(
         val keyAgreement = KeyAgreement.getInstance(ALGORITHM_EC_DH)
         keyAgreement.init(localPrivateKey)
         keyAgreement.doPhase(contactPublicKey, true)
-        keyAgreement.generateSecret(sharedSecret.value, 0)
-        return sharedSecret
+        keyAgreement.generateSecret(out.value, 0)
+        return out
     }
 
-    override suspend fun deriveKey(key: ChainKey): DerivedKeyPair {
-        val messageKey = MessageKey(hashEngine.deriveKey(key.value, byteArrayOf(0x01)))
-        val nextChainKey = ChainKey(hashEngine.deriveKey(key.value, byteArrayOf(0x02)))
-        return DerivedKeyPair(messageKey, nextChainKey)
+    override suspend fun deriveKey(key: ChainKey, out: DerivedKeyPair): DerivedKeyPair {
+        hashEngine.deriveKey(key.value, messageSalt, out.messageKey.value)
+        hashEngine.deriveKey(key.value, chainSalt, out.chainKey.value)
+        return out
     }
 
-    override suspend fun deriveKeys(chainKey: ChainKey, sharedSecret: SharedSecret): DerivedKeyPair {
+    override suspend fun deriveKeys(chainKey: ChainKey, sharedSecret: SharedSecret, out: DerivedKeyPair): DerivedKeyPair {
         val derivedWithSharedSecretKey = hashEngine.deriveKey(chainKey.value, sharedSecret.value)
-        val messageKey = MessageKey(hashEngine.deriveKey(derivedWithSharedSecretKey, byteArrayOf(0x01)))
-        val nextChainKey = ChainKey(hashEngine.deriveKey(derivedWithSharedSecretKey, byteArrayOf(0x02)))
-        return DerivedKeyPair(messageKey, nextChainKey)
+        hashEngine.deriveKey(derivedWithSharedSecretKey, messageSalt, out.messageKey.value)
+        hashEngine.deriveKey(derivedWithSharedSecretKey, chainSalt, out.chainKey.value)
+        return out
     }
 
     private companion object {
@@ -76,5 +75,8 @@ class JceDoubleRatchetKeyRepository(
         private const val NAMED_CURVE_SPEC = "secp256r1"
         private const val ALGORITHM_EC = "EC"
         private const val ALGORITHM_EC_DH = "ECDH"
+
+        private val messageSalt = byteArrayOf(0x01)
+        private val chainSalt = byteArrayOf(0x02)
     }
 }

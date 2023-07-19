@@ -11,5 +11,7 @@ value class MessageKey(override val value: ByteArray) : DHCriticalMaterial {
 
     companion object {
         private const val KEY_LENGTH_BYTE: Int = 32
+
+        fun empty(): MessageKey = MessageKey(ByteArray(KEY_LENGTH_BYTE))
     }
 }
