@@ -5,18 +5,9 @@ plugins {
     `maven-publish`
 }
 
-project.extensions.configure<JavaPluginExtension>("java") {
-    withJavadocJar()
-    withSourcesJar()
-}
-
 project.extensions.configure<PublishingExtension>("publishing") {
     setupMavenRepository()
     setupPublication()
-}
-
-tasks.named("publish${project.name.capitalized()}PublicationToMavenRepository") {
-    dependsOn(tasks.named("jar"))
 }
 
 /**
@@ -41,14 +32,11 @@ fun PublishingExtension.setupMavenRepository() {
  * Entry point for setting publication detail.
  */
 fun PublishingExtension.setupPublication() {
-    publications { setPublication() }
-}
-
-fun PublicationContainer.setPublication() {
-    this.create<MavenPublication>(project.name) {
-        setProjectDetails()
-        setJavaArtifacts(project)
-        setPom()
+    publications {
+        create<MavenPublication>(project.name) {
+            setProjectDetails()
+            setPom()
+        }
     }
 }
 
@@ -106,18 +94,4 @@ fun MavenPublication.setPom() {
             }
         }
     }
-}
-
-/**
- * Set additional artifacts to upload
- * - sources
- * - javadoc
- * - jar
- *
- * @param project project current project
- */
-fun MavenPublication.setJavaArtifacts(project: Project) {
-    artifact("${project.buildDir}/libs/${project.name}-${project.version}.jar")
-    artifact(project.tasks.named("sourcesJar"))
-    artifact(project.tasks.named("javadocJar"))
 }
