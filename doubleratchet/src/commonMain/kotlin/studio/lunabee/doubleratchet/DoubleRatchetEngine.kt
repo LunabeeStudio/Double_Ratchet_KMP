@@ -25,7 +25,7 @@ class DoubleRatchetEngine(
 
     suspend fun createInvitation(newConversationId: DoubleRatchetUUID = createRandomUUID()): InvitationData {
         val keyPair: AsymmetricKeyPair = doubleRatchetKeyRepository.generateKeyPair()
-        val conversation = Conversation(
+        val conversation = Conversation.createNew(
             id = newConversationId,
             personalKeyPair = keyPair,
         )
@@ -50,7 +50,7 @@ class DoubleRatchetEngine(
         val sendChainKey = doubleRatchetKeyRepository.generateChainKey()
         doubleRatchetLocalDatasource.saveChainKey(id = newConversationId.uuidString(), sendChainKey)
         val receiveChainKey: ChainKey = doubleRatchetKeyRepository.deriveKey(sendChainKey).chainKey
-        val conversation = Conversation(
+        val conversation = Conversation.createFromInvitation(
             id = newConversationId,
             personalKeyPair = keyPair,
             sendChainKey = sendChainKey,
@@ -95,28 +95,25 @@ class DoubleRatchetEngine(
         val derivedKeyPair = doubleRatchetKeyRepository.deriveKeys(conversation.sendChainKey!!, sharedSecret)
         sharedSecret.destroy()
 
-        val newConversation = conversation.copy(
-            personalKeyPair = newKeyPair,
+        conversation.apply {
+            personalKeyPair = newKeyPair
             sentLastMessageData = MessageConversationCounter(
                 message = conversation.sentLastMessageData?.message?.inc() ?: 0u,
                 sequence = 0u,
-            ),
-            lastMessageReceivedType = Conversation.MessageType.Sent,
-            sendChainKey = derivedKeyPair.chainKey,
-        )
+            )
+            lastMessageReceivedType = Conversation.MessageType.Sent
+            sendChainKey = derivedKeyPair.chainKey
+        }
 
-        doubleRatchetLocalDatasource.saveOrUpdateConversation(newConversation)
+        doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
         derivedKeyPair.chainKey.destroy()
         newKeyPair.privateKey.destroy()
 
         val chainKeyToSend = doubleRatchetLocalDatasource.retrieveChainKey(conversation.id.uuidString())
         return SendMessageData(
             messageHeader = MessageHeader(
-                counter = MessageConversationCounter(
-                    message = conversation.sentLastMessageData?.message?.inc() ?: 0u,
-                    sequence = 0u,
-                ),
-                publicKey = newKeyPair.publicKey,
+                counter = conversation.sentLastMessageData!!,
+                publicKey = conversation.personalKeyPair.publicKey,
                 chainKey = chainKeyToSend,
             ),
             messageKey = derivedKeyPair.messageKey,
@@ -125,18 +122,9 @@ class DoubleRatchetEngine(
 
     private suspend fun sendOldSequence(conversation: Conversation): SendMessageData {
         val derivedKeyPair = doubleRatchetKeyRepository.deriveKey(conversation.sendChainKey!!)
-        val newConversation = conversation.copy(
-            sendChainKey = derivedKeyPair.chainKey,
-            sentLastMessageData = MessageConversationCounter(
-                message = conversation.sentLastMessageData?.message?.inc() ?: 0u,
-                sequence = conversation.sentLastMessageData?.sequence?.inc() ?: 0u,
-            ),
-        )
-        doubleRatchetLocalDatasource.saveOrUpdateConversation(newConversation)
-        derivedKeyPair.chainKey.destroy()
 
         val chainKeyToSend = doubleRatchetLocalDatasource.retrieveChainKey(conversation.id.uuidString())
-        return SendMessageData(
+        val messageData = SendMessageData(
             messageHeader = MessageHeader(
                 counter = MessageConversationCounter(
                     message = conversation.sentLastMessageData?.message?.inc() ?: 0u,
@@ -147,18 +135,30 @@ class DoubleRatchetEngine(
             ),
             messageKey = derivedKeyPair.messageKey,
         )
+
+        conversation.apply {
+            sendChainKey = derivedKeyPair.chainKey
+            sentLastMessageData = MessageConversationCounter(
+                message = conversation.sentLastMessageData?.message?.inc() ?: 0u,
+                sequence = conversation.sentLastMessageData?.sequence?.inc() ?: 0u,
+            )
+        }
+        doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
+        derivedKeyPair.chainKey.destroy()
+
+        return messageData
     }
 
     /**
      * @return the key needed to decrypt the message attached to the messageHeader
      */
     suspend fun getReceiveKey(messageHeader: MessageHeader, conversationId: DoubleRatchetUUID): MessageKey {
-        var conversation = doubleRatchetLocalDatasource.getConversation(conversationId)
+        val conversation = doubleRatchetLocalDatasource.getConversation(conversationId)
             ?: throw DoubleRatchetError(DoubleRatchetError.Type.ConversationNotFound)
 
         // If the chains keys are unknown, we need to set up conversation with the receiveChainKey in the messageHeader.
         if (!conversation.isReadyForMessageReceiving()) {
-            conversation = setupConversationOnReceiveMessage(messageHeader, conversation)
+            setupConversationOnReceiveMessage(messageHeader, conversation)
         }
 
         val isMessageKeyAlreadyGenerated = conversation.receivedLastMessageData?.message?.let { messageCount ->
@@ -231,14 +231,14 @@ class DoubleRatchetEngine(
         derivedKeyPair: DerivedKeyPair,
     ) {
         doubleRatchetKeyRepository.deriveKey(conversation.receiveChainKey!!, derivedKeyPair)
-        val newConversation = conversation.copy(
-            receiveChainKey = derivedKeyPair.chainKey,
+        conversation.apply {
+            receiveChainKey = derivedKeyPair.chainKey
             receivedLastMessageData = MessageConversationCounter(
                 message = conversation.receivedLastMessageData?.message?.inc() ?: 1u,
                 sequence = conversation.receivedLastMessageData?.sequence?.inc() ?: 1u,
-            ),
-        )
-        doubleRatchetLocalDatasource.saveOrUpdateConversation(newConversation)
+            )
+        }
+        doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
         derivedKeyPair.chainKey.destroy()
     }
 
@@ -251,27 +251,30 @@ class DoubleRatchetEngine(
         doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(publicKey, conversation.personalKeyPair.privateKey, sharedSecret)
         doubleRatchetKeyRepository.deriveKeys(conversation.receiveChainKey!!, sharedSecret, derivedKeyPair)
         sharedSecret.destroy()
-        val newConversation = conversation.copy(
-            receiveChainKey = derivedKeyPair.chainKey,
-            contactPublicKey = publicKey,
+        conversation.apply {
+            receiveChainKey = derivedKeyPair.chainKey
+            contactPublicKey = publicKey
             receivedLastMessageData = MessageConversationCounter(
                 message = conversation.receivedLastMessageData?.message?.inc() ?: 0u,
                 sequence = 0u,
-            ),
-            lastMessageReceivedType = Conversation.MessageType.Received,
-        )
-        doubleRatchetLocalDatasource.saveOrUpdateConversation(newConversation)
+            )
+            lastMessageReceivedType = Conversation.MessageType.Received
+        }
+        doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
         derivedKeyPair.chainKey.destroy()
     }
 
     private suspend fun setupConversationOnReceiveMessage(
         messageHeader: MessageHeader,
         conversation: Conversation,
-    ): Conversation {
+    ) {
         val receiveChainKey: ChainKey =
             messageHeader.chainKey ?: throw DoubleRatchetError(DoubleRatchetError.Type.RequiredChainKeyMissing)
         val sendChainKey: ChainKey = doubleRatchetKeyRepository.deriveKey(receiveChainKey).chainKey
-        return conversation.copy(sendChainKey = sendChainKey, receiveChainKey = receiveChainKey)
+        conversation.apply {
+            this.sendChainKey = sendChainKey
+            this.receiveChainKey = receiveChainKey
+        }
     }
 
     private fun getMessageKeyId(conversationId: DoubleRatchetUUID, messageNumber: UInt): String {

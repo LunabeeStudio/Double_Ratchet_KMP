@@ -22,6 +22,10 @@ interface DoubleRatchetLocalDatasource {
      * Return and delete [MessageKey] with id [id]
      */
     suspend fun popMessageKey(id: String): MessageKey?
+
+    /**
+     * @return The initial chain key for initialization (null after initialization done)
+     */
     suspend fun retrieveChainKey(id: String): ChainKey?
 
     /**

@@ -1,15 +1,30 @@
 package studio.lunabee.doubleratchet.model
 
-data class Conversation(
+class Conversation private constructor(
     val id: DoubleRatchetUUID,
-    val personalKeyPair: AsymmetricKeyPair,
-    val sendChainKey: ChainKey? = null,
-    val receiveChainKey: ChainKey? = null,
-    val contactPublicKey: PublicKey? = null,
-    val lastMessageReceivedType: MessageType? = null,
-    val sentLastMessageData: MessageConversationCounter? = null,
-    val receivedLastMessageData: MessageConversationCounter? = null,
+    personalKeyPair: AsymmetricKeyPair,
+    sendChainKey: ChainKey? = null,
+    receiveChainKey: ChainKey? = null,
+    contactPublicKey: PublicKey? = null,
+    lastMessageReceivedType: MessageType? = null,
+    sentLastMessageData: MessageConversationCounter? = null,
+    receivedLastMessageData: MessageConversationCounter? = null,
 ) {
+    var personalKeyPair: AsymmetricKeyPair = personalKeyPair
+        internal set
+    var sendChainKey: ChainKey? = sendChainKey
+        internal set
+    var receiveChainKey: ChainKey? = receiveChainKey
+        internal set
+    var contactPublicKey: PublicKey? = contactPublicKey
+        internal set
+    var lastMessageReceivedType: MessageType? = lastMessageReceivedType
+        internal set
+    var sentLastMessageData: MessageConversationCounter? = sentLastMessageData
+        internal set
+    var receivedLastMessageData: MessageConversationCounter? = receivedLastMessageData
+        internal set
+
     fun isReadyForMessageSending(): Boolean {
         return sendChainKey != null && contactPublicKey != null
     }
@@ -18,35 +33,28 @@ data class Conversation(
         return receiveChainKey != null && contactPublicKey != null
     }
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other == null || this::class != other::class) return false
-
-        other as Conversation
-
-        if (id != other.id) return false
-        if (personalKeyPair != other.personalKeyPair) return false
-        if (sendChainKey != other.sendChainKey) return false
-        if (receiveChainKey != other.receiveChainKey) return false
-        if (contactPublicKey != other.contactPublicKey) return false
-        if (lastMessageReceivedType != other.lastMessageReceivedType) return false
-        if (sentLastMessageData != other.sentLastMessageData) return false
-        return receivedLastMessageData == other.receivedLastMessageData
-    }
-
-    override fun hashCode(): Int {
-        var result = id.hashCode()
-        result = 31 * result + personalKeyPair.hashCode()
-        result = 31 * result + (sendChainKey?.hashCode() ?: 0)
-        result = 31 * result + (receiveChainKey?.hashCode() ?: 0)
-        result = 31 * result + (contactPublicKey?.hashCode() ?: 0)
-        result = 31 * result + (lastMessageReceivedType?.hashCode() ?: 0)
-        result = 31 * result + (sentLastMessageData?.hashCode() ?: 0)
-        result = 31 * result + (receivedLastMessageData?.hashCode() ?: 0)
-        return result
-    }
-
     enum class MessageType {
         Sent, Received
+    }
+
+    companion object {
+        fun createNew(id: DoubleRatchetUUID, personalKeyPair: AsymmetricKeyPair): Conversation = Conversation(
+            id = id,
+            personalKeyPair = personalKeyPair,
+        )
+
+        fun createFromInvitation(
+            id: DoubleRatchetUUID,
+            personalKeyPair: AsymmetricKeyPair,
+            sendChainKey: ChainKey,
+            receiveChainKey: ChainKey,
+            contactPublicKey: PublicKey,
+        ): Conversation = Conversation(
+            id = id,
+            personalKeyPair = personalKeyPair,
+            sendChainKey = sendChainKey,
+            receiveChainKey = receiveChainKey,
+            contactPublicKey = contactPublicKey,
+        )
     }
 }

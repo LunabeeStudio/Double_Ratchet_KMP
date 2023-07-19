@@ -20,19 +20,20 @@ class PlainMapDoubleRatchetLocalDatasource : DoubleRatchetLocalDatasource {
 
     override suspend fun saveOrUpdateConversation(conversation: Conversation) {
         // deep copy
-        conversations[conversation.id] = Conversation(
-            conversation.id,
-            AsymmetricKeyPair(
+        conversations[conversation.id] = Conversation.createNew(
+            id = conversation.id,
+            personalKeyPair = AsymmetricKeyPair(
                 PublicKey(conversation.personalKeyPair.publicKey.value.copyOf()),
                 PrivateKey(conversation.personalKeyPair.privateKey.value.copyOf()),
             ),
-            conversation.sendChainKey?.value?.let { ChainKey(it.copyOf()) },
-            conversation.receiveChainKey?.value?.let { ChainKey(it.copyOf()) },
-            conversation.contactPublicKey?.value?.let { PublicKey(it.copyOf()) },
-            conversation.lastMessageReceivedType,
-            conversation.sentLastMessageData,
-            conversation.receivedLastMessageData,
-        )
+        ).apply {
+            sendChainKey = conversation.sendChainKey?.value?.let { ChainKey(it.copyOf()) }
+            receiveChainKey = conversation.receiveChainKey?.value?.let { ChainKey(it.copyOf()) }
+            contactPublicKey = conversation.contactPublicKey?.value?.let { PublicKey(it.copyOf()) }
+            lastMessageReceivedType = conversation.lastMessageReceivedType
+            sentLastMessageData = conversation.sentLastMessageData
+            receivedLastMessageData = conversation.receivedLastMessageData
+        }
     }
 
     override suspend fun getConversation(id: DoubleRatchetUUID): Conversation? = conversations[id]
