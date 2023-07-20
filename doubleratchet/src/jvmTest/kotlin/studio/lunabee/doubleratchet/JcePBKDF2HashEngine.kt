@@ -90,4 +90,3 @@ internal fun SecretKey.safeDestroy() {
         // Destroy not implemented
     }
 }
-

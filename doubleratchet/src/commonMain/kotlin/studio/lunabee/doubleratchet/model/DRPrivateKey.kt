@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2023 Lunabee Studio
+ * Copyright (c) 2023 Lunabee Studio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 
 package studio.lunabee.doubleratchet.model
 
-class AsymmetricKeyPair(
-    val publicKey: DRPublicKey,
-    val privateKey: DRPrivateKey,
-)
+import kotlin.jvm.JvmInline
+
+/**
+ * Private key of an [AsymmetricKeyPair] encoded in PKCS #8 format
+ */
+@JvmInline
+value class DRPrivateKey internal constructor(override val value: ByteArray) : DRCriticalKey

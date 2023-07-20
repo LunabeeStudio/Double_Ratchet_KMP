@@ -22,12 +22,15 @@ plugins {
 
 group = "studio.lunabee.doubleratchet"
 description = "Kotlin multiplatform implementation of double ratchet algorithm"
-version = "0.1.0"
+version = "0.1.1"
 
 kotlin {
     jvm {
         compilations.all {
             kotlinOptions.jvmTarget = ProjectConfig.JDK_VERSION.toString()
+        }
+        testRuns["test"].executionTask.configure {
+            useJUnitPlatform()
         }
         withJava()
     }
@@ -35,7 +38,7 @@ kotlin {
     listOf(
         iosX64(),
         iosArm64(),
-        iosSimulatorArm64()
+        iosSimulatorArm64(),
     ).forEach {
         it.binaries.framework {
             baseName = "doubleratchet"
@@ -46,17 +49,17 @@ kotlin {
         val commonMain by getting
         val commonTest by getting {
             dependencies {
-                implementation(kotlin("test"))
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutine.test)
             }
         }
-        val jvmMain by getting {
-            dependencies {
-                implementation("org.bouncycastle:bcprov-jdk18on:1.74")
-            }
-        }
+        val jvmMain by getting
         val jvmTest by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.2")
+                implementation(libs.junit)
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutine.test)
+                implementation(libs.bouncycastle)
             }
         }
         val iosX64Main by getting

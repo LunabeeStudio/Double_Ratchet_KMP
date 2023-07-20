@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2023 Lunabee Studio
+ * Copyright (c) 2023 Lunabee Studio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package studio.lunabee.doubleratchet.model
+package studio.lunabee.doubleratchet
 
-class AsymmetricKeyPair(
-    val publicKey: DRPublicKey,
-    val privateKey: DRPrivateKey,
-)
+import kotlin.random.Random
+
+object RandomProviderTest {
+    private val seed: Int = Random.nextInt().also {
+        println("Random seed = $it")
+    }
+    val random: Random = Random(seed)
+}

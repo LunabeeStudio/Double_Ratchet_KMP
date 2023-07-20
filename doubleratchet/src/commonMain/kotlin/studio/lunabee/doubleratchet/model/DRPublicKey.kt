@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2023 Lunabee Studio
+ * Copyright (c) 2023 Lunabee Studio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package studio.lunabee.doubleratchet
+package studio.lunabee.doubleratchet.model
 
-import kotlin.test.Test
-import kotlin.test.assertTrue
+import kotlin.jvm.JvmInline
 
-class CommonGreetingTest {
-
-    @Test
-    fun testExample() {
-        assertTrue(true)
+/**
+ * Public key of an [AsymmetricKeyPair] encoded in X.509 format
+ */
+@JvmInline
+value class DRPublicKey internal constructor(override val value: ByteArray) : DRCriticalKey {
+    fun contentEquals(other: DRPublicKey?): Boolean {
+        return other?.equals(value) == true
     }
 }

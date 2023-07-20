@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2023 Lunabee Studio
+ * Copyright (c) 2023 Lunabee Studio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,21 @@
 
 package studio.lunabee.doubleratchet.model
 
-class AsymmetricKeyPair(
-    val publicKey: DRPublicKey,
-    val privateKey: DRPrivateKey,
-)
+import studio.lunabee.doubleratchet.utils.randomize
+
+/**
+ * Critical cryptographic material which must be clean after use
+ */
+interface DRCriticalKey {
+    val value: ByteArray
+
+    fun destroy() {
+        value.randomize()
+    }
+}
+
+inline fun <T : DRCriticalKey, U> T.use(block: (T) -> U): U = try {
+    block(this)
+} finally {
+    this.destroy()
+}

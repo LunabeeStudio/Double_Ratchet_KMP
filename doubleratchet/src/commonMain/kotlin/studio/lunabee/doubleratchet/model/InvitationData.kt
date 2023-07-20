@@ -18,5 +18,5 @@ package studio.lunabee.doubleratchet.model
 
 class InvitationData(
     val conversationId: DoubleRatchetUUID,
-    val publicKey: ByteArray,
+    val publicKey: DRPublicKey,
 )

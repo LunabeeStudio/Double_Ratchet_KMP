@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2023 Lunabee Studio
+ * Copyright (c) 2023 Lunabee Studio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package studio.lunabee.doubleratchet
+package studio.lunabee.doubleratchet.model
 
-import kotlin.test.Test
-import kotlin.test.assertTrue
+import kotlin.jvm.JvmInline
 
-class IosGreetingTest {
+@JvmInline
+value class DRMessageKey(override val value: ByteArray) : DRCriticalKey {
 
-    @Test
-    fun testExample() {
-        assertTrue(Greeting().greet().contains("iOS"), "Check iOS is mentioned")
+    companion object {
+        private const val DEFAULT_KEY_LENGTH_BYTE: Int = 32
+
+        fun empty(length: Int = DEFAULT_KEY_LENGTH_BYTE): DRMessageKey = DRMessageKey(ByteArray(length))
     }
 }
