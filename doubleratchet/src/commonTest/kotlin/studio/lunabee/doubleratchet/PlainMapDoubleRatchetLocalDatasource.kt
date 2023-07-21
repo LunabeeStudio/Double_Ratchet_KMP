@@ -55,7 +55,8 @@ class PlainMapDoubleRatchetLocalDatasource(
                 DRPrivateKey(conversation.personalKeyPair.privateKey.value.copyOf()),
             ),
         ).apply {
-            this.nextSendMessageData = conversation.nextSendMessageData
+            this.nextMessageNumber = conversation.nextMessageNumber
+            this.nextSequenceNumber = conversation.nextSequenceNumber
             this.rootKey = conversation.rootKey?.value?.copyOf()?.let { DRRootKey(it) }
             this.sendingChainKey = conversation.sendingChainKey?.value?.copyOf()?.let { DRChainKey(it) }
             this.receiveChainKey = conversation.receiveChainKey?.value?.copyOf()?.let { DRChainKey(it) }

@@ -19,7 +19,8 @@ package studio.lunabee.doubleratchet.model
 class Conversation private constructor(
     val id: DoubleRatchetUUID,
     personalKeyPair: AsymmetricKeyPair,
-    nextSendMessageData: MessageConversationCounter = MessageConversationCounter(0u, 0u),
+    messageNumber: UInt = 0u,
+    sequenceNumber: UInt = 0u,
     rootKey: DRRootKey? = null,
     sendingChainKey: DRChainKey? = null,
     receiveChainKey: DRChainKey? = null,
@@ -36,7 +37,9 @@ class Conversation private constructor(
         internal set
     var lastContactPublicKey: DRPublicKey? = lastContactPublicKey
         internal set
-    var nextSendMessageData: MessageConversationCounter = nextSendMessageData
+    var nextMessageNumber: UInt = messageNumber
+        internal set
+    var nextSequenceNumber: UInt = sequenceNumber
         internal set
     var receivedLastMessageNumber: UInt? = receivedLastMessageNumber
         internal set

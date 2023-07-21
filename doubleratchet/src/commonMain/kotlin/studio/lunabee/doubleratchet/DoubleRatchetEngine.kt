@@ -27,7 +27,6 @@ import studio.lunabee.doubleratchet.model.DerivedKeyMessagePair
 import studio.lunabee.doubleratchet.model.DoubleRatchetError
 import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.model.InvitationData
-import studio.lunabee.doubleratchet.model.MessageConversationCounter
 import studio.lunabee.doubleratchet.model.MessageHeader
 import studio.lunabee.doubleratchet.model.SendMessageData
 import studio.lunabee.doubleratchet.model.createRandomUUID
@@ -113,10 +112,8 @@ class DoubleRatchetEngine(
 
         val messageData = SendMessageData(
             messageHeader = MessageHeader(
-                counter = MessageConversationCounter(
-                    message = conversation.nextSendMessageData.message,
-                    sequence = conversation.nextSendMessageData.sequence,
-                ),
+                messageNumber = conversation.nextMessageNumber,
+                sequenceNumber = conversation.nextSequenceNumber,
                 publicKey = conversation.personalKeyPair.publicKey,
             ),
             messageKey = derivedKeyPair.messageKey,
@@ -124,10 +121,8 @@ class DoubleRatchetEngine(
 
         conversation.apply {
             this.sendingChainKey = derivedKeyPair.chainKey // TODO optim already updated by deriveChainKeys
-            this.nextSendMessageData = MessageConversationCounter(
-                message = conversation.nextSendMessageData.message.inc(),
-                sequence = conversation.nextSendMessageData.sequence.inc(),
-            )
+            this.nextMessageNumber = conversation.nextMessageNumber.inc()
+            this.nextSequenceNumber = conversation.nextSequenceNumber.inc()
         }
         doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
         derivedKeyPair.chainKey.destroy()
@@ -147,7 +142,7 @@ class DoubleRatchetEngine(
             ?: throw DoubleRatchetError(DoubleRatchetError.Type.ConversationNotFound)
 
         val isMessageKeyAlreadyGenerated = conversation.receivedLastMessageNumber?.let { messageCount ->
-            messageCount >= messageHeader.counter.message
+            messageCount >= messageHeader.messageNumber
         } ?: false
 
         return if (isMessageKeyAlreadyGenerated) {
@@ -167,7 +162,7 @@ class DoubleRatchetEngine(
         messageHeader: MessageHeader,
         conversationId: DoubleRatchetUUID,
     ): DRMessageKey {
-        val messageKeyId = getMessageKeyId(conversationId, messageHeader.counter.message)
+        val messageKeyId = getMessageKeyId(conversationId, messageHeader.messageNumber)
         return doubleRatchetLocalDatasource.popMessageKey(messageKeyId)
             ?: throw DoubleRatchetError(DoubleRatchetError.Type.MessageKeyNotFound)
     }
@@ -182,7 +177,7 @@ class DoubleRatchetEngine(
         val newSequenceMessageNumber: UInt? = if (messageHeader.publicKey.contentEquals(workingConversation.lastContactPublicKey)) {
             null
         } else {
-            messageHeader.counter.message - messageHeader.counter.sequence
+            messageHeader.messageNumber - messageHeader.sequenceNumber
         }
 
         var messageNumber = lastMessageNumber?.inc() ?: 0u
@@ -202,7 +197,7 @@ class DoubleRatchetEngine(
             workingConversation = doubleRatchetLocalDatasource.getConversation(conversation.id)
                 ?: throw DoubleRatchetError(DoubleRatchetError.Type.ConversationNotFound)
 
-            if (messageNumber == messageHeader.counter.message) {
+            if (messageNumber == messageHeader.messageNumber) {
                 messageKey = derivedKeyPair.messageKey
             } else {
                 doubleRatchetLocalDatasource.saveMessageKey(
@@ -277,10 +272,8 @@ class DoubleRatchetEngine(
             this.sendingChainKey = derivedKeyPair.chainKey
             this.rootKey = derivedKeyPair.rootKey
             this.personalKeyPair = newKeyPair
-            this.nextSendMessageData = MessageConversationCounter(
-                message = conversation.nextSendMessageData.message,
-                sequence = 0u,
-            )
+            this.nextMessageNumber = conversation.nextMessageNumber
+            this.nextSequenceNumber = 0u
         }
 
         doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)

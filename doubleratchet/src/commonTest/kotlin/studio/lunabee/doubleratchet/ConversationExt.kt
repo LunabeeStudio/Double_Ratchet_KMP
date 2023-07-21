@@ -29,10 +29,8 @@ fun Conversation.print(): String {
         "\tsendingChainKey=${sendingChainKey?.value.contentHashCode()}\n" +
         "\treceiveChainKey=${receiveChainKey?.value.contentHashCode()}\n" +
         "\tlastContactPublicKey=${lastContactPublicKey?.value.contentHashCode()}\n" +
-        "\tnextSendMessageData=(\n" +
-        "\t\tmessage=${nextSendMessageData.message}\n" +
-        "\t\tsequence=${nextSendMessageData.sequence}\n" +
-        "\t)\n" +
+        "\tnextMessageNumber=${nextMessageNumber}\n" +
+        "\tnextSequenceNumber=${nextSequenceNumber}\n" +
         "\treceivedLastMessageNumber=$receivedLastMessageNumber\n" +
         ")"
 }
