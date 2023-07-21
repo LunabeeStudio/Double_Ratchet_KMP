@@ -18,18 +18,18 @@ package studio.lunabee.doubleratchet
 
 import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
-import studio.lunabee.doubleratchet.model.DRChainKey
 import studio.lunabee.doubleratchet.model.Conversation
-import studio.lunabee.doubleratchet.model.DerivedKeyPair
+import studio.lunabee.doubleratchet.model.DRMessageKey
+import studio.lunabee.doubleratchet.model.DRPublicKey
+import studio.lunabee.doubleratchet.model.DRRootKey
+import studio.lunabee.doubleratchet.model.DRSharedSecret
+import studio.lunabee.doubleratchet.model.DerivedKeyMessagePair
 import studio.lunabee.doubleratchet.model.DoubleRatchetError
 import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.model.InvitationData
 import studio.lunabee.doubleratchet.model.MessageConversationCounter
 import studio.lunabee.doubleratchet.model.MessageHeader
-import studio.lunabee.doubleratchet.model.DRMessageKey
-import studio.lunabee.doubleratchet.model.DRPublicKey
 import studio.lunabee.doubleratchet.model.SendMessageData
-import studio.lunabee.doubleratchet.model.DRSharedSecret
 import studio.lunabee.doubleratchet.model.createRandomUUID
 import studio.lunabee.doubleratchet.model.use
 import studio.lunabee.doubleratchet.storage.DoubleRatchetLocalDatasource
@@ -39,6 +39,13 @@ class DoubleRatchetEngine(
     private val doubleRatchetKeyRepository: DoubleRatchetKeyRepository,
 ) {
 
+    /**
+     * Generate the data needed to create an invitation to start a new conversation
+     *
+     * @param newConversationId The id to be used for the conversation
+     *
+     * @return the conversation id
+     */
     suspend fun createInvitation(newConversationId: DoubleRatchetUUID = createRandomUUID()): InvitationData {
         val keyPair: AsymmetricKeyPair = doubleRatchetKeyRepository.generateKeyPair()
         val conversation = Conversation.createNew(
@@ -56,28 +63,35 @@ class DoubleRatchetEngine(
     /**
      * Generate the data needed to start a new conversation from an invitation
      *
-     * @return the provided or generated id assign to the conversation created
+     * @param contactPublicKey The public key coming from the invitation
+     * @param sharedSalt An initial shared salt. Could be a constant.
+     * @param newConversationId The id to be used for the conversation
+     *
+     * @return the conversation id
      */
     suspend fun createNewConversationFromInvitation(
         contactPublicKey: DRPublicKey,
+        sharedSalt: DRSharedSecret,
         newConversationId: DoubleRatchetUUID = createRandomUUID(),
     ): DoubleRatchetUUID {
         val keyPair: AsymmetricKeyPair = doubleRatchetKeyRepository.generateKeyPair()
-        val sendChainKey = doubleRatchetKeyRepository.generateChainKey()
-        doubleRatchetLocalDatasource.saveChainKey(id = newConversationId, sendChainKey)
-        val receiveChainKey: DRChainKey = doubleRatchetKeyRepository.deriveKey(sendChainKey).chainKey
+        val sharedSecret = doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(contactPublicKey, keyPair.privateKey)
+        val rootKey = DRRootKey(sharedSalt.value) // Initial root key is the shared secret
+
+        val keyRootPair = doubleRatchetKeyRepository.deriveRootKeys(rootKey, sharedSecret)
+
         val conversation = Conversation.createFromInvitation(
             id = newConversationId,
             personalKeyPair = keyPair,
-            sendChainKey = sendChainKey,
-            receiveChainKey = receiveChainKey,
-            contactPublicKey = contactPublicKey,
+            rootKey = keyRootPair.rootKey,
+            sendingChainKey = keyRootPair.chainKey,
         )
 
         try {
             doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
         } finally {
-            sendChainKey.destroy()
+            keyRootPair.rootKey.destroy()
+            keyRootPair.chainKey.destroy()
             keyPair.privateKey.destroy()
             keyPair.publicKey.destroy()
             contactPublicKey.destroy()
@@ -93,70 +107,26 @@ class DoubleRatchetEngine(
         val conversation = doubleRatchetLocalDatasource.getConversation(conversationId)
             ?: throw DoubleRatchetError(DoubleRatchetError.Type.ConversationNotFound)
         if (!conversation.isReadyForMessageSending()) throw DoubleRatchetError(DoubleRatchetError.Type.ConversationNotSetup)
-        val isNewSequence = conversation.lastMessageReceivedType != Conversation.MessageType.Sent
 
-        return if (isNewSequence) {
-            sendNewSequenceData(conversation)
-        } else {
-            sendOldSequence(conversation)
-        }
-    }
+        val sendingChainKey = conversation.sendingChainKey!!
+        val derivedKeyPair = doubleRatchetKeyRepository.deriveChainKeys(sendingChainKey)
 
-    private suspend fun sendNewSequenceData(conversation: Conversation): SendMessageData {
-        val newKeyPair = doubleRatchetKeyRepository.generateKeyPair()
-        val sharedSecret = doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(
-            conversation.contactPublicKey!!,
-            newKeyPair.privateKey,
-        )
-        val derivedKeyPair = doubleRatchetKeyRepository.deriveKeys(conversation.sendChainKey!!, sharedSecret)
-        sharedSecret.destroy()
-
-        conversation.apply {
-            personalKeyPair = newKeyPair
-            sentLastMessageData = MessageConversationCounter(
-                message = conversation.sentLastMessageData?.message?.inc() ?: 0u,
-                sequence = 0u,
-            )
-            lastMessageReceivedType = Conversation.MessageType.Sent
-            sendChainKey = derivedKeyPair.chainKey
-        }
-
-        doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
-        derivedKeyPair.chainKey.destroy()
-        newKeyPair.privateKey.destroy()
-
-        val chainKeyToSend = doubleRatchetLocalDatasource.retrieveChainKey(conversation.id)
-        return SendMessageData(
-            messageHeader = MessageHeader(
-                counter = conversation.sentLastMessageData!!,
-                publicKey = conversation.personalKeyPair.publicKey,
-                chainKey = chainKeyToSend,
-            ),
-            messageKey = derivedKeyPair.messageKey,
-        )
-    }
-
-    private suspend fun sendOldSequence(conversation: Conversation): SendMessageData {
-        val derivedKeyPair = doubleRatchetKeyRepository.deriveKey(conversation.sendChainKey!!)
-
-        val chainKeyToSend = doubleRatchetLocalDatasource.retrieveChainKey(conversation.id)
         val messageData = SendMessageData(
             messageHeader = MessageHeader(
                 counter = MessageConversationCounter(
-                    message = conversation.sentLastMessageData?.message?.inc() ?: 0u,
-                    sequence = conversation.sentLastMessageData?.sequence?.inc() ?: 0u,
+                    message = conversation.nextSendMessageData.message,
+                    sequence = conversation.nextSendMessageData.sequence,
                 ),
                 publicKey = conversation.personalKeyPair.publicKey,
-                chainKey = chainKeyToSend,
             ),
             messageKey = derivedKeyPair.messageKey,
         )
 
         conversation.apply {
-            sendChainKey = derivedKeyPair.chainKey
-            sentLastMessageData = MessageConversationCounter(
-                message = conversation.sentLastMessageData?.message?.inc() ?: 0u,
-                sequence = conversation.sentLastMessageData?.sequence?.inc() ?: 0u,
+            this.sendingChainKey = derivedKeyPair.chainKey // TODO optim already updated by deriveChainKeys
+            this.nextSendMessageData = MessageConversationCounter(
+                message = conversation.nextSendMessageData.message.inc(),
+                sequence = conversation.nextSendMessageData.sequence.inc(),
             )
         }
         doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
@@ -168,14 +138,13 @@ class DoubleRatchetEngine(
     /**
      * @return the key needed to decrypt the message attached to the messageHeader
      */
-    suspend fun getReceiveKey(messageHeader: MessageHeader, conversationId: DoubleRatchetUUID): DRMessageKey {
+    suspend fun getReceiveKey(
+        messageHeader: MessageHeader,
+        conversationId: DoubleRatchetUUID,
+        sharedSalt: DRSharedSecret? = null, // TODO move to repo ?
+    ): DRMessageKey {
         val conversation = doubleRatchetLocalDatasource.getConversation(conversationId)
             ?: throw DoubleRatchetError(DoubleRatchetError.Type.ConversationNotFound)
-
-        // If the chains keys are unknown, we need to set up conversation with the receiveChainKey in the messageHeader.
-        if (!conversation.isReadyForMessageReceiving()) {
-            setupConversationOnReceiveMessage(messageHeader, conversation)
-        }
 
         val isMessageKeyAlreadyGenerated = conversation.receivedLastMessageNumber?.let { messageCount ->
             messageCount >= messageHeader.counter.message
@@ -184,6 +153,12 @@ class DoubleRatchetEngine(
         return if (isMessageKeyAlreadyGenerated) {
             popStoredMessageKey(messageHeader, conversationId)
         } else {
+            if (conversation.rootKey == null) {
+                conversation.apply {
+                    this.rootKey = DRRootKey(sharedSalt!!.value) // Initial root key is the shared secret
+                }
+            }
+
             computeNextMessageKey(messageHeader, conversation)
         }
     }
@@ -204,7 +179,7 @@ class DoubleRatchetEngine(
         var workingConversation = conversation
         val lastMessageNumber = workingConversation.receivedLastMessageNumber
 
-        val newSequenceMessageNumber: UInt? = if (messageHeader.publicKey.contentEquals(workingConversation.contactPublicKey)) {
+        val newSequenceMessageNumber: UInt? = if (messageHeader.publicKey.contentEquals(workingConversation.lastContactPublicKey)) {
             null
         } else {
             messageHeader.counter.message - messageHeader.counter.sequence
@@ -213,12 +188,14 @@ class DoubleRatchetEngine(
         var messageNumber = lastMessageNumber?.inc() ?: 0u
         var messageKey: DRMessageKey? = null
         val sharedSecret = lazy { DRSharedSecret.empty() }
-        val derivedKeyPair = DerivedKeyPair.empty()
+        val derivedKeyPair = DerivedKeyMessagePair.empty()
         while (messageKey == null) {
             if (messageNumber == newSequenceMessageNumber) {
                 sharedSecret.value.use {
-                    receiveNewSequenceMessage(messageHeader.publicKey, workingConversation, it, derivedKeyPair)
+                    receiveNewSequenceMessage(messageHeader.publicKey, workingConversation, sharedSecret.value, derivedKeyPair)
                 }
+                // Update for next sending
+                updateConversationForNextSend(messageHeader, workingConversation)
             } else {
                 receiveOldSequenceMessage(workingConversation, derivedKeyPair)
             }
@@ -237,16 +214,14 @@ class DoubleRatchetEngine(
             }
         }
 
-        // Once the contact has replied, we can delete the chain from database
-        doubleRatchetLocalDatasource.deleteChainKey(id = conversation.id)
         return messageKey
     }
 
     private suspend fun receiveOldSequenceMessage(
         conversation: Conversation,
-        derivedKeyPair: DerivedKeyPair,
+        derivedKeyPair: DerivedKeyMessagePair,
     ) {
-        doubleRatchetKeyRepository.deriveKey(conversation.receiveChainKey!!, derivedKeyPair)
+        doubleRatchetKeyRepository.deriveChainKeys(conversation.receiveChainKey!!, derivedKeyPair)
         conversation.apply {
             receiveChainKey = derivedKeyPair.chainKey
             receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 1u
@@ -259,32 +234,60 @@ class DoubleRatchetEngine(
         publicKey: DRPublicKey,
         conversation: Conversation,
         sharedSecret: DRSharedSecret,
-        derivedKeyPair: DerivedKeyPair,
+        derivedKeyPair: DerivedKeyMessagePair,
     ) {
-        doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(publicKey, conversation.personalKeyPair.privateKey, sharedSecret)
-        doubleRatchetKeyRepository.deriveKeys(conversation.receiveChainKey!!, sharedSecret, derivedKeyPair)
+        doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(
+            publicKey = publicKey,
+            privateKey = conversation.personalKeyPair.privateKey,
+            out = sharedSecret,
+        )
+        // TODO optim byteArray newDerivedKeyRootPair.chainKey (?)
+        val newDerivedKeyRootPair = doubleRatchetKeyRepository.deriveRootKeys(
+            rootKey = conversation.rootKey!!,
+            sharedSecret = sharedSecret,
+        )
+        val newDerivedKeyPair = doubleRatchetKeyRepository.deriveChainKeys(
+            chainKey = newDerivedKeyRootPair.chainKey,
+            out = derivedKeyPair,
+        )
+
         sharedSecret.destroy()
         conversation.apply {
-            receiveChainKey = derivedKeyPair.chainKey
-            contactPublicKey = publicKey
-            receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 0u
-            lastMessageReceivedType = Conversation.MessageType.Received
+            this.rootKey = newDerivedKeyRootPair.rootKey
+            this.receiveChainKey = newDerivedKeyPair.chainKey
+            this.lastContactPublicKey = publicKey
+            this.receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 0u
         }
         doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
-        derivedKeyPair.chainKey.destroy()
     }
 
-    private suspend fun setupConversationOnReceiveMessage(
+    private suspend fun updateConversationForNextSend(
         messageHeader: MessageHeader,
         conversation: Conversation,
     ) {
-        val receiveChainKey: DRChainKey =
-            messageHeader.chainKey ?: throw DoubleRatchetError(DoubleRatchetError.Type.RequiredChainKeyMissing)
-        val sendChainKey: DRChainKey = doubleRatchetKeyRepository.deriveKey(receiveChainKey).chainKey
+        val newKeyPair = doubleRatchetKeyRepository.generateKeyPair()
+        val sharedSecret = doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(
+            messageHeader.publicKey,
+            newKeyPair.privateKey,
+        )
+        val derivedKeyPair = doubleRatchetKeyRepository.deriveRootKeys(conversation.rootKey!!, sharedSecret)
+        sharedSecret.destroy()
+
         conversation.apply {
-            this.sendChainKey = sendChainKey
-            this.receiveChainKey = receiveChainKey
+            this.sendingChainKey = derivedKeyPair.chainKey
+            this.rootKey = derivedKeyPair.rootKey
+            this.personalKeyPair = newKeyPair
+            this.nextSendMessageData = MessageConversationCounter(
+                message = conversation.nextSendMessageData.message,
+                sequence = 0u,
+            )
         }
+
+        doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
+        derivedKeyPair.chainKey.destroy()
+        derivedKeyPair.rootKey.destroy()
+        newKeyPair.privateKey.destroy()
+        newKeyPair.publicKey.destroy()
     }
 
     private fun getMessageKeyId(conversationId: DoubleRatchetUUID, messageNumber: UInt): String {

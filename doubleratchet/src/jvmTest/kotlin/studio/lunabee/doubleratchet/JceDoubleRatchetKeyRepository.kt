@@ -19,10 +19,12 @@ package studio.lunabee.doubleratchet
 import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.DRChainKey
-import studio.lunabee.doubleratchet.model.DerivedKeyPair
 import studio.lunabee.doubleratchet.model.DRPrivateKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
+import studio.lunabee.doubleratchet.model.DRRootKey
 import studio.lunabee.doubleratchet.model.DRSharedSecret
+import studio.lunabee.doubleratchet.model.DerivedKeyMessagePair
+import studio.lunabee.doubleratchet.model.DerivedKeyRootPair
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
 import java.security.SecureRandom
@@ -55,8 +57,6 @@ class JceDoubleRatchetKeyRepository(
         )
     }
 
-    override suspend fun generateChainKey(): DRChainKey = DRChainKey.random(random)
-
     override suspend fun createDiffieHellmanSharedSecret(
         publicKey: DRPublicKey,
         privateKey: DRPrivateKey,
@@ -72,16 +72,26 @@ class JceDoubleRatchetKeyRepository(
         return out
     }
 
-    override suspend fun deriveKey(key: DRChainKey, out: DerivedKeyPair): DerivedKeyPair {
-        hashEngine.deriveKey(key.value, messageSalt, out.messageKey.value)
-        hashEngine.deriveKey(key.value, chainSalt, out.chainKey.value)
+    override suspend fun deriveRootKeys(rootKey: DRRootKey, sharedSecret: DRSharedSecret, out: DerivedKeyRootPair): DerivedKeyRootPair {
+        val packedOut = ByteArray(out.rootKey.value.size + out.chainKey.value.size)
+        hashEngine.deriveKey(rootKey.value, sharedSecret.value, packedOut)
+        // TODO try to avoid copy by using the packed array instead of DerivedKeyRootPair
+        packedOut.copyInto(
+            destination = out.rootKey.value,
+            startIndex = 0,
+            endIndex = out.rootKey.value.size,
+        )
+        packedOut.copyInto(
+            destination = out.chainKey.value,
+            startIndex = out.rootKey.value.size,
+        )
         return out
     }
 
-    override suspend fun deriveKeys(chainKey: DRChainKey, sharedSecret: DRSharedSecret, out: DerivedKeyPair): DerivedKeyPair {
-        val derivedWithSharedSecretKey = hashEngine.deriveKey(chainKey.value, sharedSecret.value)
-        hashEngine.deriveKey(derivedWithSharedSecretKey, messageSalt, out.messageKey.value)
-        hashEngine.deriveKey(derivedWithSharedSecretKey, chainSalt, out.chainKey.value)
+    // TODO no return, only fill out param (?) (cf comment DerivedKeyMessagePair useless?)
+    override suspend fun deriveChainKeys(chainKey: DRChainKey, out: DerivedKeyMessagePair): DerivedKeyMessagePair {
+        hashEngine.deriveKey(chainKey.value, messageSalt, out.messageKey.value)
+        hashEngine.deriveKey(chainKey.value, chainSalt, out.chainKey.value)
         return out
     }
 

@@ -21,8 +21,10 @@ import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.DRChainKey
 import studio.lunabee.doubleratchet.model.DRPrivateKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
+import studio.lunabee.doubleratchet.model.DRRootKey
 import studio.lunabee.doubleratchet.model.DRSharedSecret
-import studio.lunabee.doubleratchet.model.DerivedKeyPair
+import studio.lunabee.doubleratchet.model.DerivedKeyMessagePair
+import studio.lunabee.doubleratchet.model.DerivedKeyRootPair
 
 /**
  * Dummy implementation of [DoubleRatchetKeyRepository] with constant arrays
@@ -33,10 +35,6 @@ object ConstantDoubleRatchetKeyRepository : DoubleRatchetKeyRepository {
             publicKey = DRPublicKey(byteArrayOf(1)),
             privateKey = DRPrivateKey(byteArrayOf(2)),
         )
-    }
-
-    override suspend fun generateChainKey(): DRChainKey {
-        return DRChainKey(byteArrayOf(3))
     }
 
     override suspend fun createDiffieHellmanSharedSecret(
@@ -50,9 +48,9 @@ object ConstantDoubleRatchetKeyRepository : DoubleRatchetKeyRepository {
         return out
     }
 
-    override suspend fun deriveKey(key: DRChainKey, out: DerivedKeyPair): DerivedKeyPair {
-        out.messageKey.value.indices.forEach {
-            out.messageKey.value[it] = 5
+    override suspend fun deriveRootKeys(rootKey: DRRootKey, sharedSecret: DRSharedSecret, out: DerivedKeyRootPair): DerivedKeyRootPair {
+        out.rootKey.value.indices.forEach {
+            out.rootKey.value[it] = 5
         }
         out.chainKey.value.indices.forEach {
             out.chainKey.value[it] = 6
@@ -60,12 +58,12 @@ object ConstantDoubleRatchetKeyRepository : DoubleRatchetKeyRepository {
         return out
     }
 
-    override suspend fun deriveKeys(chainKey: DRChainKey, sharedSecret: DRSharedSecret, out: DerivedKeyPair): DerivedKeyPair {
-        out.messageKey.value.indices.forEach {
-            out.messageKey.value[it] = 7
-        }
+    override suspend fun deriveChainKeys(chainKey: DRChainKey, out: DerivedKeyMessagePair): DerivedKeyMessagePair {
         out.chainKey.value.indices.forEach {
-            out.chainKey.value[it] = 8
+            out.chainKey.value[it] = 7
+        }
+        out.messageKey.value.indices.forEach {
+            out.messageKey.value[it] = 8
         }
         return out
     }

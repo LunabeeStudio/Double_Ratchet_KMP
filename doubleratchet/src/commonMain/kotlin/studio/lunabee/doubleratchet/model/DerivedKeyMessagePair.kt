@@ -16,7 +16,12 @@
 
 package studio.lunabee.doubleratchet.model
 
-class MessageHeader(
-    val counter: MessageConversationCounter,
-    val publicKey: DRPublicKey,
-)
+// TODO does this pair makes sense vs 2 separate key (chainKey could be updated without updating the rootKey)
+class DerivedKeyMessagePair(
+    val chainKey: DRChainKey,
+    val messageKey: DRMessageKey,
+) {
+    companion object {
+        fun empty(): DerivedKeyMessagePair = DerivedKeyMessagePair(DRChainKey.empty(), DRMessageKey.empty())
+    }
+}

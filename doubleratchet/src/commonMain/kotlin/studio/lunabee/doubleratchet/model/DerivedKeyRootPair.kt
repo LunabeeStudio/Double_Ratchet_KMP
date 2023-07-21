@@ -16,11 +16,12 @@
 
 package studio.lunabee.doubleratchet.model
 
-class DerivedKeyPair(
-    val messageKey: DRMessageKey,
+// TODO does this pair makes sense vs 2 separate key (chainKey could be updated without updating the rootKey)
+class DerivedKeyRootPair(
+    val rootKey: DRRootKey,
     val chainKey: DRChainKey,
 ) {
     companion object {
-        fun empty(): DerivedKeyPair = DerivedKeyPair(DRMessageKey.empty(), DRChainKey.empty())
+        fun empty(): DerivedKeyRootPair = DerivedKeyRootPair(DRRootKey.empty(), DRChainKey.empty())
     }
 }

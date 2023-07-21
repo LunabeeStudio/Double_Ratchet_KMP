@@ -23,10 +23,13 @@ import org.bouncycastle.crypto.params.HKDFParameters
 class BouncyCastleHKDFHashEngine {
     private val hkdf = HKDFBytesGenerator(SHA512Digest())
 
+    // TODO add info like Rust impl
+    //  https://github.com/signalapp/libsignal/blob/3b7f3173cc4431bc4c6e55f6182a37229b2db6fd/rust/protocol/src/ratchet/keys.rs#L22
+    //  https://github.com/signalapp/libsignal/blob/3b7f3173cc4431bc4c6e55f6182a37229b2db6fd/rust/protocol/src/ratchet/keys.rs#L128
     fun deriveKey(key: ByteArray, salt: ByteArray, out: ByteArray = ByteArray(DERIVED_KEY_LENGTH_BYTE)): ByteArray {
         val hkdfParams = HKDFParameters(key, salt, null)
         hkdf.init(hkdfParams)
-        hkdf.generateBytes(out, 0, DERIVED_KEY_LENGTH_BYTE)
+        hkdf.generateBytes(out, 0, out.size)
         return out
     }
 

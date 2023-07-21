@@ -18,22 +18,19 @@ package studio.lunabee.doubleratchet.crypto
 
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.DRChainKey
-import studio.lunabee.doubleratchet.model.DerivedKeyPair
 import studio.lunabee.doubleratchet.model.DRMessageKey
 import studio.lunabee.doubleratchet.model.DRPrivateKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
+import studio.lunabee.doubleratchet.model.DRRootKey
 import studio.lunabee.doubleratchet.model.DRSharedSecret
+import studio.lunabee.doubleratchet.model.DerivedKeyMessagePair
+import studio.lunabee.doubleratchet.model.DerivedKeyRootPair
 
 interface DoubleRatchetKeyRepository {
     /**
      * Generate a pair of public and a private Key
      */
     suspend fun generateKeyPair(): AsymmetricKeyPair
-
-    /**
-     * Generate a [DRChainKey] for new conversation
-     */
-    suspend fun generateChainKey(): DRChainKey
 
     /**
      * Generate a [DRSharedSecret] from a contact public key and a personal private key in param array [out]
@@ -45,19 +42,19 @@ interface DoubleRatchetKeyRepository {
     ): DRSharedSecret
 
     /**
-     * Derive a [DRChainKey] with a Key Derivation Function and get a message key and a new chainKey
+     * KDF_RK(rk, dh_out)
      */
-    suspend fun deriveKey(
-        key: DRChainKey,
-        out: DerivedKeyPair = DerivedKeyPair(DRMessageKey.empty(), DRChainKey.empty()),
-    ): DerivedKeyPair
+    suspend fun deriveRootKeys(
+        rootKey: DRRootKey,
+        sharedSecret: DRSharedSecret,
+        out: DerivedKeyRootPair = DerivedKeyRootPair(DRRootKey.empty(), DRChainKey.empty()),
+    ): DerivedKeyRootPair
 
     /**
-     * Derive [DRChainKey] and [DRSharedSecret] with a Key Derivation Function and get a message key and a new chainKey
+     * KDF_CK(ck)
      */
-    suspend fun deriveKeys(
+    suspend fun deriveChainKeys(
         chainKey: DRChainKey,
-        sharedSecret: DRSharedSecret,
-        out: DerivedKeyPair = DerivedKeyPair(DRMessageKey.empty(), DRChainKey.empty()),
-    ): DerivedKeyPair
+        out: DerivedKeyMessagePair = DerivedKeyMessagePair(DRChainKey.empty(), DRMessageKey.empty()),
+    ): DerivedKeyMessagePair
 }

@@ -19,38 +19,34 @@ package studio.lunabee.doubleratchet.model
 class Conversation private constructor(
     val id: DoubleRatchetUUID,
     personalKeyPair: AsymmetricKeyPair,
-    sendChainKey: DRChainKey? = null,
+    nextSendMessageData: MessageConversationCounter = MessageConversationCounter(0u, 0u),
+    rootKey: DRRootKey? = null,
+    sendingChainKey: DRChainKey? = null,
     receiveChainKey: DRChainKey? = null,
-    contactPublicKey: DRPublicKey? = null,
-    lastMessageReceivedType: MessageType? = null,
-    sentLastMessageData: MessageConversationCounter? = null,
+    lastContactPublicKey: DRPublicKey? = null,
     receivedLastMessageNumber: UInt? = null,
 ) {
     var personalKeyPair: AsymmetricKeyPair = personalKeyPair
         internal set
-    var sendChainKey: DRChainKey? = sendChainKey
+    var rootKey: DRRootKey? = rootKey
+        internal set
+    var sendingChainKey: DRChainKey? = sendingChainKey
         internal set
     var receiveChainKey: DRChainKey? = receiveChainKey
         internal set
-    var contactPublicKey: DRPublicKey? = contactPublicKey
+    var lastContactPublicKey: DRPublicKey? = lastContactPublicKey
         internal set
-    var lastMessageReceivedType: MessageType? = lastMessageReceivedType
-        internal set
-    var sentLastMessageData: MessageConversationCounter? = sentLastMessageData
+    var nextSendMessageData: MessageConversationCounter = nextSendMessageData
         internal set
     var receivedLastMessageNumber: UInt? = receivedLastMessageNumber
         internal set
 
     fun isReadyForMessageSending(): Boolean {
-        return sendChainKey != null && contactPublicKey != null
+        return sendingChainKey != null
     }
 
-    fun isReadyForMessageReceiving(): Boolean {
-        return receiveChainKey != null && contactPublicKey != null
-    }
-
-    enum class MessageType {
-        Sent, Received
+    fun isReadyForMessageReceiving(): Boolean { // TODO should be used
+        return receiveChainKey != null
     }
 
     companion object {
@@ -62,15 +58,13 @@ class Conversation private constructor(
         fun createFromInvitation(
             id: DoubleRatchetUUID,
             personalKeyPair: AsymmetricKeyPair,
-            sendChainKey: DRChainKey,
-            receiveChainKey: DRChainKey,
-            contactPublicKey: DRPublicKey,
+            rootKey: DRRootKey,
+            sendingChainKey: DRChainKey,
         ): Conversation = Conversation(
             id = id,
             personalKeyPair = personalKeyPair,
-            sendChainKey = sendChainKey,
-            receiveChainKey = receiveChainKey,
-            contactPublicKey = contactPublicKey,
+            rootKey = rootKey,
+            sendingChainKey = sendingChainKey,
         )
     }
 }

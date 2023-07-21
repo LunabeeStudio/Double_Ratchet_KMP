@@ -18,6 +18,8 @@ package studio.lunabee.doubleratchet.model
 
 import kotlin.jvm.JvmInline
 
+// TODO too overkill? or add a way to update message and sequence separately
+
 /**
  * Wrapper for Signal protocol message number (N) and chain length (PN)
  *
