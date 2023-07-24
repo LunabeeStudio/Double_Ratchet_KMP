@@ -19,7 +19,6 @@ package studio.lunabee.doubleratchet
 import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.Conversation
-import studio.lunabee.doubleratchet.model.DRChainKey
 import studio.lunabee.doubleratchet.model.DRMessageKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
 import studio.lunabee.doubleratchet.model.DRRootKey
@@ -264,14 +263,14 @@ class DoubleRatchetEngine(
             sharedSecret = sharedSecret,
             out = DerivedKeyRootPair(conversation.rootKey!!, derivedKeyPair.chainKey)
         )
-        val newDerivedKeyPair = doubleRatchetKeyRepository.deriveChainKeys(
+        sharedSecret.destroy()
+        doubleRatchetKeyRepository.deriveChainKeys(
             chainKey = derivedKeyPair.chainKey,
             out = derivedKeyPair,
         )
 
-        sharedSecret.destroy()
         conversation.apply {
-            this.receiveChainKey = newDerivedKeyPair.chainKey
+            this.receiveChainKey = derivedKeyPair.chainKey
             this.lastContactPublicKey = publicKey
             this.receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 0u
         }
