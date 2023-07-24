@@ -257,7 +257,6 @@ class ConversationTest {
 
         assertIsEmpty(datasourceA.messageKeys)
         assertIsEmpty(datasourceB.messageKeys)
-        // TODO assert conversation final state
     }
 
     /**
@@ -316,7 +315,6 @@ class ConversationTest {
 
         assertIsEmpty(datasourceA.messageKeys)
         assertIsEmpty(datasourceB.messageKeys)
-        // TODO assert conversation final state
     }
 
     private fun getRepository() = DoubleRatchetKeyRepositoryFactory.getRepository(random, keyLength)
