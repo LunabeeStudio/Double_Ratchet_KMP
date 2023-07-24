@@ -133,7 +133,7 @@ class ConversationTest {
         val conversationIdA = invitationFromA.conversationId
         val conversationIdB = engineB.createNewConversationFromInvitation(invitationFromA.publicKey, sharedInit)
         val headerB = engineB.getSendData(conversationIdB)
-        engineA.getReceiveKey(headerB.messageHeader, conversationIdA, sharedInit)
+        engineA.getFirstReceiveKey(headerB.messageHeader, conversationIdA, sharedInit)
 
         assertContentEquals(datasourceA.rootKeys[0].value, datasourceB.rootKeys[0].value)
     }
@@ -157,7 +157,7 @@ class ConversationTest {
         }
         assertEquals(DoubleRatchetError.Type.ConversationNotSetup, error.type)
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
-        val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId, sharedInit)
+        val receivedBob1 = engineBob.getFirstReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId, sharedInit)
         assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
     }
 
@@ -176,7 +176,7 @@ class ConversationTest {
         val aliceToBobConversationId: DoubleRatchetUUID =
             engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey, sharedInit)
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
-        val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId, sharedInit)
+        val receivedBob1 = engineBob.getFirstReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId, sharedInit)
         assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
         val receivedBis = assertFailsWith(DoubleRatchetError::class) {
             engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
@@ -200,7 +200,7 @@ class ConversationTest {
             engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey, sharedInit)
 
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
-        val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId, sharedInit)
+        val receivedBob1 = engineBob.getFirstReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId, sharedInit)
         assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
         val aliceMessage2 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
         val receivedBob2 = engineBob.getReceiveKey(aliceMessage2.messageHeader, bobToAliceInvitation.conversationId)
@@ -245,7 +245,7 @@ class ConversationTest {
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
 
         // Bob receives the message
-        val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId, sharedInit)
+        val receivedBob1 = engineBob.getFirstReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId, sharedInit)
         assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
 
         // Alice sends a message to bob again, but bob misses it
@@ -296,7 +296,7 @@ class ConversationTest {
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
 
         // Bob receives the message
-        val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId, sharedInit)
+        val receivedBob1 = engineBob.getFirstReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId, sharedInit)
         assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
 
         // Alice sends a message to bob again, but bob misses it
