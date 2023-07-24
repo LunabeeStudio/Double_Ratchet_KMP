@@ -39,7 +39,7 @@ class PlainMapDoubleRatchetLocalDatasource(
             check(field == null || value!!.id == field?.id)
             val newRootKey = value?.rootKey
             if (newRootKey != null && !newRootKey.value.contentEquals(rootKeys.lastOrNull()?.value)) {
-                rootKeys += newRootKey
+                rootKeys += newRootKey.value.copyOf().let { DRRootKey(it) }
             }
             field = value
         }
@@ -47,25 +47,40 @@ class PlainMapDoubleRatchetLocalDatasource(
     val rootKeys: MutableList<DRRootKey> = mutableListOf()
 
     override suspend fun saveOrUpdateConversation(conversation: Conversation) {
-        // deep copy
-        this.conversation = Conversation.createNew(
+        this.conversation = Conversation(
             id = conversation.id,
             personalKeyPair = AsymmetricKeyPair(
                 DRPublicKey(conversation.personalKeyPair.publicKey.value.copyOf()),
                 DRPrivateKey(conversation.personalKeyPair.privateKey.value.copyOf()),
             ),
-        ).apply {
-            this.nextMessageNumber = conversation.nextMessageNumber
-            this.nextSequenceNumber = conversation.nextSequenceNumber
-            this.rootKey = conversation.rootKey?.value?.copyOf()?.let { DRRootKey(it) }
-            this.sendingChainKey = conversation.sendingChainKey?.value?.copyOf()?.let { DRChainKey(it) }
-            this.receiveChainKey = conversation.receiveChainKey?.value?.copyOf()?.let { DRChainKey(it) }
-            this.lastContactPublicKey = conversation.lastContactPublicKey?.value?.copyOf()?.let { DRPublicKey(it) }
-            this.receivedLastMessageNumber = conversation.receivedLastMessageNumber
-        }
+            rootKey = DRRootKey(conversation.rootKey!!.value.copyOf()),
+            messageNumber = conversation.nextMessageNumber,
+            sequenceNumber = conversation.nextSequenceNumber,
+            sendingChainKey = conversation.sendingChainKey?.value?.copyOf()?.let { DRChainKey(it) },
+            receiveChainKey = conversation.receiveChainKey?.value?.copyOf()?.let { DRChainKey(it) },
+            lastContactPublicKey = conversation.lastContactPublicKey?.value?.copyOf()?.let { DRPublicKey(it) },
+            receivedLastMessageNumber = conversation.receivedLastMessageNumber,
+        )
     }
 
-    override suspend fun getConversation(id: DoubleRatchetUUID): Conversation? = if (id == conversation?.id) conversation else null
+    override suspend fun getConversation(id: DoubleRatchetUUID): Conversation? = if (id == conversation?.id) {
+        Conversation(
+            id = conversation!!.id,
+            personalKeyPair = AsymmetricKeyPair(
+                DRPublicKey(conversation!!.personalKeyPair.publicKey.value.copyOf()),
+                DRPrivateKey(conversation!!.personalKeyPair.privateKey.value.copyOf()),
+            ),
+            rootKey = DRRootKey(conversation!!.rootKey!!.value.copyOf()),
+            messageNumber = conversation!!.nextMessageNumber,
+            sequenceNumber = conversation!!.nextSequenceNumber,
+            sendingChainKey = conversation!!.sendingChainKey?.value?.copyOf()?.let { DRChainKey(it) },
+            receiveChainKey = conversation!!.receiveChainKey?.value?.copyOf()?.let { DRChainKey(it) },
+            lastContactPublicKey = conversation!!.lastContactPublicKey?.value?.copyOf()?.let { DRPublicKey(it) },
+            receivedLastMessageNumber = conversation!!.receivedLastMessageNumber,
+        )
+    } else {
+        null
+    }
 
     override suspend fun saveMessageKey(id: String, key: DRMessageKey) {
         messageKeys[id] = DRMessageKey(key.value.copyOf())

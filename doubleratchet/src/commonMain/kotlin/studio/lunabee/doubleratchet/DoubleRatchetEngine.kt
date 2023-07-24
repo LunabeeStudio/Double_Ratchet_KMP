@@ -44,14 +44,16 @@ class DoubleRatchetEngine(
      * Generate the data needed to create an invitation to start a new conversation
      *
      * @param newConversationId The id to be used for the conversation
+     * @param sharedSalt An initial shared salt
      *
      * @return the conversation id
      */
-    suspend fun createInvitation(newConversationId: DoubleRatchetUUID = createRandomUUID()): InvitationData {
+    suspend fun createInvitation(sharedSalt: DRSharedSecret, newConversationId: DoubleRatchetUUID = createRandomUUID()): InvitationData {
         val keyPair: AsymmetricKeyPair = doubleRatchetKeyRepository.generateKeyPair()
         val conversation = Conversation.createNew(
             id = newConversationId,
             personalKeyPair = keyPair,
+            initialRootKey = DRRootKey(sharedSalt.value),
         )
         saveAndDestroy(conversation)
         return InvitationData(
@@ -142,41 +144,10 @@ class DoubleRatchetEngine(
             messageCount >= messageHeader.messageNumber
         } ?: false
 
-        return try {
-            if (isMessageKeyAlreadyGenerated) {
-                popStoredMessageKey(messageHeader, conversationId)
-            } else {
-                computeNextMessageKeyAndUpdateConversation(messageHeader, conversation)
-            }
-        } finally {
-            conversation.destroy()
-        }
-    }
-
-    /**
-     * Finalize the initialization of the conversation and retrieve the key associated to the received message
-     *
-     * @param messageHeader The header of the received message
-     * @param conversationId The id of the associated conversation
-     * @param sharedSalt The initial shared salt used by the contact in [createNewConversationFromInvitation]
-     *
-     * @return the key needed to decrypt the message attached to the messageHeader
-     */
-    suspend fun getFirstReceiveKey(
-        messageHeader: MessageHeader,
-        conversationId: DoubleRatchetUUID,
-        sharedSalt: DRSharedSecret,
-    ): DRMessageKey {
-        val conversation = doubleRatchetLocalDatasource.getConversation(conversationId)
-            ?: throw DoubleRatchetError(DoubleRatchetError.Type.ConversationNotFound)
-        if (conversation.rootKey != null) {
-            throw DoubleRatchetError(DoubleRatchetError.Type.ConversationAlreadySetup)
-        }
-        conversation.rootKey = DRRootKey(sharedSalt.value) // Initial root key is the shared salt
-        return try {
+        return if (isMessageKeyAlreadyGenerated) {
+            popStoredMessageKey(messageHeader, conversationId)
+        } else {
             computeNextMessageKeyAndUpdateConversation(messageHeader, conversation)
-        } finally {
-            conversation.destroy()
         }
     }
 
@@ -212,8 +183,6 @@ class DoubleRatchetEngine(
                 receiveCurrentSequenceMessage(conversation, messageKey)
             }
 
-            doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
-
             if (messageNumber != messageHeader.messageNumber) {
                 doubleRatchetLocalDatasource.saveMessageKey(
                     id = getMessageKeyId(conversation.id, messageNumber),
@@ -222,7 +191,7 @@ class DoubleRatchetEngine(
             }
             messageNumber++
         }
-
+        saveAndDestroy(conversation)
         return messageKey
     }
 

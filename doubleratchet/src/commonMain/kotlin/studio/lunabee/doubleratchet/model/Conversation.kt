@@ -16,7 +16,7 @@
 
 package studio.lunabee.doubleratchet.model
 
-class Conversation private constructor(
+class Conversation internal constructor(
     val id: DoubleRatchetUUID,
     personalKeyPair: AsymmetricKeyPair,
     messageNumber: UInt = 0u,
@@ -46,16 +46,17 @@ class Conversation private constructor(
 
     fun destroy() {
         personalKeyPair.privateKey.destroy()
-        rootKey?.destroy()
+        // rootKey?.destroy()
         sendingChainKey?.destroy()
         receiveChainKey?.destroy()
         lastContactPublicKey?.destroy()
     }
 
     companion object {
-        fun createNew(id: DoubleRatchetUUID, personalKeyPair: AsymmetricKeyPair): Conversation = Conversation(
+        fun createNew(id: DoubleRatchetUUID, personalKeyPair: AsymmetricKeyPair, initialRootKey: DRRootKey): Conversation = Conversation(
             id = id,
             personalKeyPair = personalKeyPair,
+            rootKey = initialRootKey,
         )
 
         fun createFromInvitation(

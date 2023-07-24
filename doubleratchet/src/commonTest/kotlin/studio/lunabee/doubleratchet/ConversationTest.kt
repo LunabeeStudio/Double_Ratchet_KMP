@@ -118,11 +118,12 @@ class ConversationTest {
 
     @Test
     fun `Run conversation not setup test`(): TestResult = runTest {
+        val sharedInit = DRSharedSecret(random.nextBytes(keyLength))
         val engineBob = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource("B"),
             doubleRatchetKeyRepository = getRepository(),
         )
-        val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
+        val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInit)
         val error = assertFailsWith(DoubleRatchetError::class) {
             engineBob.getSendData(conversationId = bobToAliceInvitation.conversationId)
         }
@@ -143,14 +144,20 @@ class ConversationTest {
             doubleRatchetKeyRepository = getRepository(),
         )
 
-        val invitationFromA = engineA.createInvitation()
+        val invitationFromA = engineA.createInvitation(sharedInit)
         val conversationIdA = invitationFromA.conversationId
         val conversationIdB = engineB.createNewConversationFromInvitation(invitationFromA.publicKey, sharedInit)
         val headerB = engineB.getSendData(conversationIdB)
-        engineA.getFirstReceiveKey(headerB.messageHeader, conversationIdA, sharedInit)
+        engineA.getReceiveKey(headerB.messageHeader, conversationIdA)
 
-        val valuesB = datasourceB.rootKeys.map { key -> key.value.contentHashCode() }
-        val valuesA = datasourceA.rootKeys.map { key -> key.value.contentHashCode() }
+        val valuesB = datasourceB.rootKeys.map { key -> key.value }
+        val valuesA = datasourceA.rootKeys.map { key -> key.value }
+        println(
+            valuesA.joinToString { it.joinToString() },
+        )
+        println(
+            valuesB.joinToString { it.joinToString() },
+        )
         assertTrue(valuesA.none { value -> value in valuesB })
     }
 
@@ -165,11 +172,11 @@ class ConversationTest {
             doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource("B"),
             doubleRatchetKeyRepository = getRepository(),
         )
-        val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
+        val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInit)
         val aliceToBobConversationId: DoubleRatchetUUID =
             engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey, sharedInit)
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
-        val receivedBob1 = engineBob.getFirstReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId, sharedInit)
+        val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
         assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
         val receivedBis = assertFailsWith(DoubleRatchetError::class) {
             engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
@@ -188,12 +195,12 @@ class ConversationTest {
             doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource("B"),
             doubleRatchetKeyRepository = getRepository(),
         )
-        val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
+        val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInit)
         val aliceToBobConversationId: DoubleRatchetUUID =
             engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey, sharedInit)
 
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
-        val receivedBob1 = engineBob.getFirstReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId, sharedInit)
+        val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
         assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
         val aliceMessage2 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
         val receivedBob2 = engineBob.getReceiveKey(aliceMessage2.messageHeader, bobToAliceInvitation.conversationId)
@@ -228,7 +235,7 @@ class ConversationTest {
         )
 
         // Bob invite Alice
-        val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
+        val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInit)
 
         // Alice Accept Bob invitation
         val aliceToBobConversationId: DoubleRatchetUUID =
@@ -238,7 +245,7 @@ class ConversationTest {
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
 
         // Bob receives the message
-        val receivedBob1 = engineBob.getFirstReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId, sharedInit)
+        val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
         assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
 
         // Alice sends a message to bob again, but bob misses it
@@ -278,7 +285,7 @@ class ConversationTest {
         )
 
         // Bob invite Alice
-        val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
+        val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInit)
 
         // Alice Accept Bob invitation
         val aliceToBobConversationId: DoubleRatchetUUID =
@@ -288,7 +295,7 @@ class ConversationTest {
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
 
         // Bob receives the message
-        val receivedBob1 = engineBob.getFirstReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId, sharedInit)
+        val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
         assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
 
         // Alice sends a message to bob again, but bob misses it

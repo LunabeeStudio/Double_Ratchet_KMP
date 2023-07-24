@@ -52,7 +52,7 @@ interface DoubleRatchetKeyRepository {
     ): DerivedKeyRootPair
 
     /**
-     * KDF_CK(ck)
+     * KDF_CK(ck, ck_out)
      */
     suspend fun deriveChainKeys(
         chainKey: DRChainKey,
