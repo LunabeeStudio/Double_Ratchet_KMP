@@ -155,10 +155,14 @@ class DoubleRatchetEngine(
             messageCount >= messageHeader.messageNumber
         } ?: false
 
-        return if (isMessageKeyAlreadyGenerated) {
-            popStoredMessageKey(messageHeader, conversationId)
-        } else {
-            computeNextMessageKey(messageHeader, conversation)
+        return try {
+            if (isMessageKeyAlreadyGenerated) {
+                popStoredMessageKey(messageHeader, conversationId)
+            } else {
+                computeNextMessageKeyAndUpdateConversation(messageHeader, conversation)
+            }
+        } finally {
+            conversation.destroy()
         }
     }
 
@@ -182,7 +186,11 @@ class DoubleRatchetEngine(
             throw DoubleRatchetError(DoubleRatchetError.Type.ConversationAlreadySetup)
         }
         conversation.rootKey = DRRootKey(sharedSalt.value) // Initial root key is the shared salt
-        return computeNextMessageKey(messageHeader, conversation)
+        return try {
+            computeNextMessageKeyAndUpdateConversation(messageHeader, conversation)
+        } finally {
+            conversation.destroy()
+        }
     }
 
     private suspend fun popStoredMessageKey(
@@ -194,14 +202,13 @@ class DoubleRatchetEngine(
             ?: throw DoubleRatchetError(DoubleRatchetError.Type.MessageKeyNotFound)
     }
 
-    private suspend fun computeNextMessageKey(
+    private suspend fun computeNextMessageKeyAndUpdateConversation(
         messageHeader: MessageHeader,
         conversation: Conversation,
     ): DRMessageKey {
-        var workingConversation = conversation
-        val lastMessageNumber = workingConversation.receivedLastMessageNumber
+        val lastMessageNumber = conversation.receivedLastMessageNumber
 
-        val newSequenceMessageNumber: UInt? = if (messageHeader.publicKey.contentEquals(workingConversation.lastContactPublicKey)) {
+        val newSequenceMessageNumber: UInt? = if (messageHeader.publicKey.contentEquals(conversation.lastContactPublicKey)) {
             null
         } else {
             messageHeader.messageNumber - messageHeader.sequenceNumber
@@ -212,14 +219,13 @@ class DoubleRatchetEngine(
         val derivedKeyPair = DerivedKeyMessagePair.empty()
         while (messageKey == null) {
             if (messageNumber == newSequenceMessageNumber) {
-                receiveNewSequenceMessage(messageHeader.publicKey, workingConversation, derivedKeyPair)
-                // Update for next sending
-                updateConversationForNextSend(messageHeader, workingConversation)
+                receiveNewSequenceMessage(messageHeader.publicKey, conversation, derivedKeyPair)
+                updateConversationForNextSend(messageHeader, conversation)
             } else {
-                receiveOldSequenceMessage(workingConversation, derivedKeyPair)
+                receiveOldSequenceMessageAndUpdateConversation(conversation, derivedKeyPair)
             }
-            workingConversation = doubleRatchetLocalDatasource.getConversation(conversation.id)
-                ?: throw DoubleRatchetError(DoubleRatchetError.Type.ConversationNotFound)
+
+            doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
 
             if (messageNumber == messageHeader.messageNumber) {
                 messageKey = derivedKeyPair.messageKey
@@ -228,7 +234,6 @@ class DoubleRatchetEngine(
                     id = getMessageKeyId(conversation.id, messageNumber),
                     key = derivedKeyPair.messageKey,
                 )
-                derivedKeyPair.messageKey.destroy()
                 messageNumber++
             }
         }
@@ -236,7 +241,7 @@ class DoubleRatchetEngine(
         return messageKey
     }
 
-    private suspend fun receiveOldSequenceMessage(
+    private suspend fun receiveOldSequenceMessageAndUpdateConversation(
         conversation: Conversation,
         derivedKeyPair: DerivedKeyMessagePair,
     ) {
@@ -246,7 +251,6 @@ class DoubleRatchetEngine(
             receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 1u
         }
         doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
-        derivedKeyPair.chainKey.destroy()
     }
 
     private suspend fun receiveNewSequenceMessage(
@@ -274,7 +278,6 @@ class DoubleRatchetEngine(
             this.lastContactPublicKey = publicKey
             this.receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 0u
         }
-        doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
     }
 
     private suspend fun updateConversationForNextSend(
@@ -296,12 +299,6 @@ class DoubleRatchetEngine(
             this.nextMessageNumber = conversation.nextMessageNumber
             this.nextSequenceNumber = 0u
         }
-
-        doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
-        derivedKeyPair.chainKey.destroy()
-        derivedKeyPair.rootKey.destroy()
-        newKeyPair.privateKey.destroy()
-        newKeyPair.publicKey.destroy()
     }
 
     private fun getMessageKeyId(conversationId: DoubleRatchetUUID, messageNumber: UInt): String {

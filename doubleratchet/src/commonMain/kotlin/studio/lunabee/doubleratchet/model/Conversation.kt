@@ -44,12 +44,11 @@ class Conversation private constructor(
     var receivedLastMessageNumber: UInt? = receivedLastMessageNumber
         internal set
 
-    fun isReadyForMessageSending(): Boolean {
-        return sendingChainKey != null
-    }
-
-    fun isReadyForMessageReceiving(): Boolean { // TODO should be used
-        return receiveChainKey != null
+    fun destroy() {
+        rootKey?.destroy()
+        sendingChainKey?.destroy()
+        receiveChainKey?.destroy()
+        lastContactPublicKey?.destroy()
     }
 
     companion object {

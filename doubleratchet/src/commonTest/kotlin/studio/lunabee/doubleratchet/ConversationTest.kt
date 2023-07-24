@@ -30,6 +30,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class ConversationTest {
 
@@ -135,7 +136,9 @@ class ConversationTest {
         val headerB = engineB.getSendData(conversationIdB)
         engineA.getFirstReceiveKey(headerB.messageHeader, conversationIdA, sharedInit)
 
-        assertContentEquals(datasourceA.rootKeys[0].value, datasourceB.rootKeys[0].value)
+        val valuesB = datasourceB.rootKeys.map { key -> key.value.contentHashCode() }
+        val valuesA = datasourceA.rootKeys.map { key -> key.value.contentHashCode() }
+        assertTrue(valuesA.none { value -> value in valuesB })
     }
 
     @Test
