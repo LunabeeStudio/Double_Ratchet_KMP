@@ -110,7 +110,7 @@ class DoubleRatchetEngine(
         val sendingChainKey = conversation.sendingChainKey
             ?: throw DoubleRatchetError(DoubleRatchetError.Type.ConversationNotSetup)
 
-        val derivedKeyPair = doubleRatchetKeyRepository.deriveChainKeys(sendingChainKey)
+        val messageKey = doubleRatchetKeyRepository.deriveChainKeys(sendingChainKey, sendingChainKey).messageKey
 
         val messageData = SendMessageData(
             messageHeader = MessageHeader(
@@ -118,16 +118,15 @@ class DoubleRatchetEngine(
                 sequenceNumber = conversation.nextSequenceNumber,
                 publicKey = conversation.personalKeyPair.publicKey,
             ),
-            messageKey = derivedKeyPair.messageKey,
+            messageKey = messageKey,
         )
 
         conversation.apply {
-            this.sendingChainKey = derivedKeyPair.chainKey // TODO optim already updated by deriveChainKeys
             this.nextMessageNumber = conversation.nextMessageNumber.inc()
             this.nextSequenceNumber = conversation.nextSequenceNumber.inc()
         }
         doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
-        derivedKeyPair.chainKey.destroy()
+        conversation.destroy()
 
         return messageData
     }
