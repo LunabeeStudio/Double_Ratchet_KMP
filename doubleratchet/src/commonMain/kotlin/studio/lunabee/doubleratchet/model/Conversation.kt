@@ -45,6 +45,7 @@ class Conversation private constructor(
         internal set
 
     fun destroy() {
+        personalKeyPair.privateKey.destroy()
         rootKey?.destroy()
         sendingChainKey?.destroy()
         receiveChainKey?.destroy()

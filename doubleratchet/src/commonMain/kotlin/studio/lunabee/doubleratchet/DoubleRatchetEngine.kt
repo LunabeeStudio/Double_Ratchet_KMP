@@ -53,8 +53,7 @@ class DoubleRatchetEngine(
             id = newConversationId,
             personalKeyPair = keyPair,
         )
-        doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
-        keyPair.privateKey.destroy()
+        saveAndDestroy(conversation)
         return InvitationData(
             conversationId = newConversationId,
             publicKey = keyPair.publicKey,
@@ -85,16 +84,7 @@ class DoubleRatchetEngine(
             rootKey = keyRootPair.rootKey,
             sendingChainKey = keyRootPair.chainKey,
         )
-
-        try {
-            doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
-        } finally {
-            keyRootPair.rootKey.destroy()
-            keyRootPair.chainKey.destroy()
-            keyPair.privateKey.destroy()
-            keyPair.publicKey.destroy()
-            contactPublicKey.destroy()
-        }
+        saveAndDestroy(conversation)
 
         return newConversationId
     }
@@ -125,8 +115,7 @@ class DoubleRatchetEngine(
             this.nextMessageNumber = conversation.nextMessageNumber.inc()
             this.nextSequenceNumber = conversation.nextSequenceNumber.inc()
         }
-        doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
-        conversation.destroy()
+        saveAndDestroy(conversation)
 
         return messageData
     }
@@ -302,5 +291,13 @@ class DoubleRatchetEngine(
 
     private fun getMessageKeyId(conversationId: DoubleRatchetUUID, messageNumber: UInt): String {
         return "${conversationId.uuidString()} - $messageNumber"
+    }
+
+    private suspend fun saveAndDestroy(conversation: Conversation) {
+        try {
+            doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
+        } finally {
+            conversation.destroy()
+        }
     }
 }
