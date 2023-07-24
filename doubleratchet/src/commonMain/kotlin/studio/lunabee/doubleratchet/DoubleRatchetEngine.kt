@@ -19,6 +19,7 @@ package studio.lunabee.doubleratchet
 import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.Conversation
+import studio.lunabee.doubleratchet.model.DRChainKey
 import studio.lunabee.doubleratchet.model.DRMessageKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
 import studio.lunabee.doubleratchet.model.DRRootKey
@@ -215,27 +216,25 @@ class DoubleRatchetEngine(
         }
 
         var messageNumber = lastMessageNumber?.inc() ?: 0u
-        var messageKey: DRMessageKey? = null
-        val derivedKeyPair = DerivedKeyMessagePair.empty()
-        while (messageKey == null) {
+        val messageKey = DRMessageKey.empty()
+        conversation.receiveChainKey = conversation.receiveChainKey ?: DRChainKey.empty()
+        while (messageNumber <= messageHeader.messageNumber) {
             if (messageNumber == newSequenceMessageNumber) {
-                receiveNewSequenceMessage(messageHeader.publicKey, conversation, derivedKeyPair)
+                receiveNewSequenceMessage(messageHeader.publicKey, conversation, messageKey)
                 updateConversationForNextSend(messageHeader, conversation)
             } else {
-                receiveOldSequenceMessageAndUpdateConversation(conversation, derivedKeyPair)
+                receiveOldSequenceMessageAndUpdateConversation(conversation, messageKey)
             }
 
             doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
 
-            if (messageNumber == messageHeader.messageNumber) {
-                messageKey = derivedKeyPair.messageKey
-            } else {
+            if (messageNumber != messageHeader.messageNumber) {
                 doubleRatchetLocalDatasource.saveMessageKey(
                     id = getMessageKeyId(conversation.id, messageNumber),
-                    key = derivedKeyPair.messageKey,
+                    key = messageKey,
                 )
-                messageNumber++
             }
+            messageNumber++
         }
 
         return messageKey
@@ -243,11 +242,13 @@ class DoubleRatchetEngine(
 
     private suspend fun receiveOldSequenceMessageAndUpdateConversation(
         conversation: Conversation,
-        derivedKeyPair: DerivedKeyMessagePair,
+        messageKey: DRMessageKey,
     ) {
-        doubleRatchetKeyRepository.deriveChainKeys(conversation.receiveChainKey!!, derivedKeyPair)
+        doubleRatchetKeyRepository.deriveChainKeys(
+            conversation.receiveChainKey!!,
+            DerivedKeyMessagePair(conversation.receiveChainKey!!, messageKey),
+        )
         conversation.apply {
-            receiveChainKey = derivedKeyPair.chainKey
             receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 1u
         }
         doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
@@ -256,7 +257,7 @@ class DoubleRatchetEngine(
     private suspend fun receiveNewSequenceMessage(
         publicKey: DRPublicKey,
         conversation: Conversation,
-        derivedKeyPair: DerivedKeyMessagePair,
+        messageKey: DRMessageKey,
     ) {
         val sharedSecret = doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(
             publicKey = publicKey,
@@ -265,16 +266,15 @@ class DoubleRatchetEngine(
         doubleRatchetKeyRepository.deriveRootKeys(
             rootKey = conversation.rootKey!!,
             sharedSecret = sharedSecret,
-            out = DerivedKeyRootPair(conversation.rootKey!!, derivedKeyPair.chainKey)
+            out = DerivedKeyRootPair(conversation.rootKey!!, conversation.receiveChainKey!!),
         )
         sharedSecret.destroy()
         doubleRatchetKeyRepository.deriveChainKeys(
-            chainKey = derivedKeyPair.chainKey,
-            out = derivedKeyPair,
+            chainKey = conversation.receiveChainKey!!,
+            out = DerivedKeyMessagePair(conversation.receiveChainKey!!, messageKey),
         )
 
         conversation.apply {
-            this.receiveChainKey = derivedKeyPair.chainKey
             this.lastContactPublicKey = publicKey
             this.receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 0u
         }
