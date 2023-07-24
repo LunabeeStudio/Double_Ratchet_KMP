@@ -30,7 +30,13 @@ import studio.lunabee.doubleratchet.model.DerivedKeyRootPair
 /**
  * Dummy implementation of [DoubleRatchetKeyRepository] with constant arrays
  */
-object ConstantDoubleRatchetKeyRepository : DoubleRatchetKeyRepository {
+class ConstantDoubleRatchetKeyRepository(keyLength: Int) : DoubleRatchetKeyRepository {
+
+    override val messageKeyByteSize: Int = keyLength
+    override val chainKeyByteSize: Int = keyLength
+    override val rootKeyByteSize: Int = keyLength
+    override val sharedSecretByteSize: Int = keyLength
+
     override suspend fun generateKeyPair(): AsymmetricKeyPair {
         return AsymmetricKeyPair(
             publicKey = DRPublicKey(byteArrayOf(1)),
