@@ -21,7 +21,6 @@ import kotlinx.coroutines.test.runTest
 import studio.lunabee.doubleratchet.model.DRChainKey
 import studio.lunabee.doubleratchet.model.DRRootKey
 import studio.lunabee.doubleratchet.model.DRSharedSecret
-import studio.lunabee.doubleratchet.model.DerivedKeyRootPair
 import studio.lunabee.doubleratchet.model.DoubleRatchetError
 import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.model.InvitationData
@@ -106,10 +105,10 @@ class ConversationTest {
         val cryptoRepository1 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
         val cryptoRepository2 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
 
-        cryptoRepository1.deriveRootKeys(rootKey, sharedSecret, DerivedKeyRootPair(rootKey, chainKey))
+        cryptoRepository1.deriveRootKeys(rootKey, sharedSecret, rootKey, chainKey)
         val value1 = cryptoRepository1.deriveChainKeys(chainKey)
 
-        cryptoRepository2.deriveRootKeys(rootKey2, sharedSecret, DerivedKeyRootPair(rootKey, chainKey2))
+        cryptoRepository2.deriveRootKeys(rootKey2, sharedSecret, rootKey, chainKey2)
         val value2 = cryptoRepository2.deriveChainKeys(chainKey2)
 
         assertContentEquals(value1.messageKey.value, value2.messageKey.value)

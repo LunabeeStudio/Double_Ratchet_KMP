@@ -19,6 +19,7 @@ package studio.lunabee.doubleratchet
 import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.DRChainKey
+import studio.lunabee.doubleratchet.model.DRMessageKey
 import studio.lunabee.doubleratchet.model.DRPrivateKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
 import studio.lunabee.doubleratchet.model.DRRootKey
@@ -48,23 +49,32 @@ object ConstantDoubleRatchetKeyRepository : DoubleRatchetKeyRepository {
         return out
     }
 
-    override suspend fun deriveRootKeys(rootKey: DRRootKey, sharedSecret: DRSharedSecret, out: DerivedKeyRootPair): DerivedKeyRootPair {
-        out.rootKey.value.indices.forEach {
-            out.rootKey.value[it] = 5
+    override suspend fun deriveRootKeys(
+        rootKey: DRRootKey,
+        sharedSecret: DRSharedSecret,
+        outRootKey: DRRootKey,
+        outChainKey: DRChainKey,
+    ): DerivedKeyRootPair {
+        outRootKey.value.indices.forEach {
+            outRootKey.value[it] = 5
         }
-        out.chainKey.value.indices.forEach {
-            out.chainKey.value[it] = 6
+        outChainKey.value.indices.forEach {
+            outChainKey.value[it] = 6
         }
-        return out
+        return DerivedKeyRootPair(outRootKey, outChainKey)
     }
 
-    override suspend fun deriveChainKeys(chainKey: DRChainKey, out: DerivedKeyMessagePair): DerivedKeyMessagePair {
-        out.chainKey.value.indices.forEach {
-            out.chainKey.value[it] = 7
+    override suspend fun deriveChainKeys(
+        chainKey: DRChainKey,
+        outChainKey: DRChainKey,
+        outMessageKey: DRMessageKey,
+    ): DerivedKeyMessagePair {
+        outChainKey.value.indices.forEach {
+            outChainKey.value[it] = 7
         }
-        out.messageKey.value.indices.forEach {
-            out.messageKey.value[it] = 8
+        outMessageKey.value.indices.forEach {
+            outMessageKey.value[it] = 8
         }
-        return out
+        return DerivedKeyMessagePair(outChainKey, outMessageKey)
     }
 }

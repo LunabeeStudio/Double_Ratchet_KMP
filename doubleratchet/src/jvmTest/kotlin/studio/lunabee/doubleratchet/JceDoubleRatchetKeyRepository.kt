@@ -19,6 +19,7 @@ package studio.lunabee.doubleratchet
 import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.DRChainKey
+import studio.lunabee.doubleratchet.model.DRMessageKey
 import studio.lunabee.doubleratchet.model.DRPrivateKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
 import studio.lunabee.doubleratchet.model.DRRootKey
@@ -72,25 +73,34 @@ class JceDoubleRatchetKeyRepository(
         return out
     }
 
-    override suspend fun deriveRootKeys(rootKey: DRRootKey, sharedSecret: DRSharedSecret, out: DerivedKeyRootPair): DerivedKeyRootPair {
-        val packedOut = ByteArray(out.rootKey.value.size + out.chainKey.value.size)
+    override suspend fun deriveRootKeys(
+        rootKey: DRRootKey,
+        sharedSecret: DRSharedSecret,
+        outRootKey: DRRootKey,
+        outChainKey: DRChainKey,
+    ): DerivedKeyRootPair {
+        val packedOut = ByteArray(outRootKey.value.size + outChainKey.value.size)
         hashEngine.deriveKey(rootKey.value, sharedSecret.value, packedOut)
         packedOut.copyInto(
-            destination = out.rootKey.value,
+            destination = outRootKey.value,
             startIndex = 0,
-            endIndex = out.rootKey.value.size,
+            endIndex = outRootKey.value.size,
         )
         packedOut.copyInto(
-            destination = out.chainKey.value,
-            startIndex = out.rootKey.value.size,
+            destination = outChainKey.value,
+            startIndex = outRootKey.value.size,
         )
-        return out
+        return DerivedKeyRootPair(outRootKey, outChainKey)
     }
 
-    override suspend fun deriveChainKeys(chainKey: DRChainKey, out: DerivedKeyMessagePair): DerivedKeyMessagePair {
-        hashEngine.deriveKey(chainKey.value, messageSalt, out.messageKey.value)
-        hashEngine.deriveKey(chainKey.value, chainSalt, out.chainKey.value)
-        return out
+    override suspend fun deriveChainKeys(
+        chainKey: DRChainKey,
+        outChainKey: DRChainKey,
+        outMessageKey: DRMessageKey,
+    ): DerivedKeyMessagePair {
+        hashEngine.deriveKey(chainKey.value, messageSalt, outMessageKey.value)
+        hashEngine.deriveKey(chainKey.value, chainSalt, outChainKey.value)
+        return DerivedKeyMessagePair(outChainKey, outMessageKey)
     }
 
     private companion object {

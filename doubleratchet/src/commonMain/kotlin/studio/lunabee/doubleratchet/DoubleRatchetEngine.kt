@@ -24,8 +24,6 @@ import studio.lunabee.doubleratchet.model.DRMessageKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
 import studio.lunabee.doubleratchet.model.DRRootKey
 import studio.lunabee.doubleratchet.model.DRSharedSecret
-import studio.lunabee.doubleratchet.model.DerivedKeyMessagePair
-import studio.lunabee.doubleratchet.model.DerivedKeyRootPair
 import studio.lunabee.doubleratchet.model.DoubleRatchetError
 import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.model.InvitationData
@@ -223,7 +221,7 @@ class DoubleRatchetEngine(
                 receiveNewSequenceMessage(messageHeader.publicKey, conversation, messageKey)
                 updateConversationForNextSend(messageHeader, conversation)
             } else {
-                receiveOldSequenceMessageAndUpdateConversation(conversation, messageKey)
+                receiveCurrentSequenceMessage(conversation, messageKey)
             }
 
             doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
@@ -240,18 +238,18 @@ class DoubleRatchetEngine(
         return messageKey
     }
 
-    private suspend fun receiveOldSequenceMessageAndUpdateConversation(
+    private suspend fun receiveCurrentSequenceMessage(
         conversation: Conversation,
         messageKey: DRMessageKey,
     ) {
         doubleRatchetKeyRepository.deriveChainKeys(
-            conversation.receiveChainKey!!,
-            DerivedKeyMessagePair(conversation.receiveChainKey!!, messageKey),
+            chainKey = conversation.receiveChainKey!!,
+            outChainKey = conversation.receiveChainKey!!,
+            outMessageKey = messageKey,
         )
         conversation.apply {
             receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 1u
         }
-        doubleRatchetLocalDatasource.saveOrUpdateConversation(conversation)
     }
 
     private suspend fun receiveNewSequenceMessage(
@@ -266,12 +264,14 @@ class DoubleRatchetEngine(
         doubleRatchetKeyRepository.deriveRootKeys(
             rootKey = conversation.rootKey!!,
             sharedSecret = sharedSecret,
-            out = DerivedKeyRootPair(conversation.rootKey!!, conversation.receiveChainKey!!),
+            outRootKey = conversation.rootKey!!,
+            outChainKey = conversation.receiveChainKey!!,
         )
         sharedSecret.destroy()
         doubleRatchetKeyRepository.deriveChainKeys(
             chainKey = conversation.receiveChainKey!!,
-            out = DerivedKeyMessagePair(conversation.receiveChainKey!!, messageKey),
+            outChainKey = conversation.receiveChainKey!!,
+            outMessageKey = messageKey,
         )
 
         conversation.apply {
