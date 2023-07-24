@@ -26,8 +26,6 @@ import kotlin.jvm.JvmInline
 @JvmInline
 value class DRRootKey internal constructor(override val value: ByteArray) : DRCriticalKey {
     companion object {
-        private const val DEFAULT_KEY_LENGTH_BYTE: Int = 32
-
-        fun empty(length: Int = DEFAULT_KEY_LENGTH_BYTE): DRRootKey = DRRootKey(ByteArray(length))
+        fun empty(length: Int): DRRootKey = DRRootKey(ByteArray(length))
     }
 }

@@ -202,8 +202,8 @@ class DoubleRatchetEngine(
         }
 
         var messageNumber = lastMessageNumber?.inc() ?: 0u
-        val messageKey = DRMessageKey.empty()
-        conversation.receiveChainKey = conversation.receiveChainKey ?: DRChainKey.empty()
+        val messageKey = DRMessageKey.empty(doubleRatchetKeyRepository.messageKeyByteSize)
+        conversation.receiveChainKey = conversation.receiveChainKey ?: DRChainKey.empty(doubleRatchetKeyRepository.chainKeyByteSize)
         while (messageNumber <= messageHeader.messageNumber) {
             if (messageNumber == newSequenceMessageNumber) {
                 receiveNewSequenceMessage(messageHeader.publicKey, conversation, messageKey)

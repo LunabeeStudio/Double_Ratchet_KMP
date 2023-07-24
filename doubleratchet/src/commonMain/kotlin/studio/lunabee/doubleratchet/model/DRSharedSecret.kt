@@ -24,8 +24,6 @@ import kotlin.jvm.JvmInline
 @JvmInline
 value class DRSharedSecret(override val value: ByteArray) : DRCriticalKey {
     companion object {
-        const val DEFAULT_SECRET_LENGTH_BYTE: Int = 32
-
-        fun empty(length: Int = DEFAULT_SECRET_LENGTH_BYTE): DRSharedSecret = DRSharedSecret(ByteArray(length))
+        fun empty(length: Int): DRSharedSecret = DRSharedSecret(ByteArray(length))
     }
 }

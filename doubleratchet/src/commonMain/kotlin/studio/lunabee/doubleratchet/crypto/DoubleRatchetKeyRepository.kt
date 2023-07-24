@@ -38,7 +38,7 @@ interface DoubleRatchetKeyRepository {
     suspend fun createDiffieHellmanSharedSecret(
         publicKey: DRPublicKey,
         privateKey: DRPrivateKey,
-        out: DRSharedSecret = DRSharedSecret.empty(),
+        out: DRSharedSecret = DRSharedSecret.empty(sharedSecretByteSize),
     ): DRSharedSecret
 
     /**
@@ -47,8 +47,8 @@ interface DoubleRatchetKeyRepository {
     suspend fun deriveRootKeys(
         rootKey: DRRootKey,
         sharedSecret: DRSharedSecret,
-        outRootKey: DRRootKey = DRRootKey.empty(),
-        outChainKey: DRChainKey = DRChainKey.empty(),
+        outRootKey: DRRootKey = DRRootKey.empty(rootKeyByteSize),
+        outChainKey: DRChainKey = DRChainKey.empty(chainKeyByteSize),
     ): DerivedKeyRootPair
 
     /**
@@ -56,7 +56,31 @@ interface DoubleRatchetKeyRepository {
      */
     suspend fun deriveChainKeys(
         chainKey: DRChainKey,
-        outChainKey: DRChainKey = DRChainKey.empty(),
-        outMessageKey: DRMessageKey = DRMessageKey.empty(),
+        outChainKey: DRChainKey = DRChainKey.empty(chainKeyByteSize),
+        outMessageKey: DRMessageKey = DRMessageKey.empty(messageKeyByteSize),
     ): DerivedKeyMessagePair
+
+    /**
+     * Message key size in bytes. Default 32
+     */
+    val messageKeyByteSize: Int
+        get() = 32
+
+    /**
+     * Chain key size in bytes. Default 32
+     */
+    val chainKeyByteSize: Int
+        get() = 32
+
+    /**
+     * Root key size in bytes. Default 32
+     */
+    val rootKeyByteSize: Int
+        get() = 32
+
+    /**
+     * Root key size in bytes. Default 32
+     */
+    val sharedSecretByteSize: Int
+        get() = 32
 }

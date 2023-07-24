@@ -42,10 +42,16 @@ import kotlin.random.Random
  */
 class JceDoubleRatchetKeyRepository(
     private val random: Random,
+    keyLength: Int,
 ) : DoubleRatchetKeyRepository {
     private val secureRandom = SecureRandom.getInstance("SHA1PRNG").apply {
         setSeed(random.nextLong())
     }
+
+    override val messageKeyByteSize: Int = keyLength
+    override val chainKeyByteSize: Int = keyLength
+    override val rootKeyByteSize: Int = keyLength
+    override val sharedSecretByteSize: Int = 32 // secp256r1
 
     override suspend fun generateKeyPair(): AsymmetricKeyPair {
         val ecSpec = ECGenParameterSpec(NAMED_CURVE_SPEC)

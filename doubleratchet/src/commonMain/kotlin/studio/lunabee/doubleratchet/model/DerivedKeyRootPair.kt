@@ -22,8 +22,4 @@ package studio.lunabee.doubleratchet.model
 class DerivedKeyRootPair(
     val rootKey: DRRootKey,
     val chainKey: DRChainKey,
-) {
-    companion object {
-        fun empty(): DerivedKeyRootPair = DerivedKeyRootPair(DRRootKey.empty(), DRChainKey.empty())
-    }
-}
+)

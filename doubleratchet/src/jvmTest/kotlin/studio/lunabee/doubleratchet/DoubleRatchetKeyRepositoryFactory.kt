@@ -20,5 +20,5 @@ import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import kotlin.random.Random
 
 actual object DoubleRatchetKeyRepositoryFactory {
-    actual fun getRepository(random: Random): DoubleRatchetKeyRepository = JceDoubleRatchetKeyRepository(random)
+    actual fun getRepository(random: Random, keyLength: Int): DoubleRatchetKeyRepository = JceDoubleRatchetKeyRepository(random, keyLength)
 }

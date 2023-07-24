@@ -22,8 +22,4 @@ package studio.lunabee.doubleratchet.model
 class DerivedKeyMessagePair(
     val chainKey: DRChainKey,
     val messageKey: DRMessageKey,
-) {
-    companion object {
-        fun empty(): DerivedKeyMessagePair = DerivedKeyMessagePair(DRChainKey.empty(), DRMessageKey.empty())
-    }
-}
+)
