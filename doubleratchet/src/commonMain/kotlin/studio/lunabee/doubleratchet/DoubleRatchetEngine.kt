@@ -19,18 +19,19 @@ package studio.lunabee.doubleratchet
 import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.Conversation
+import studio.lunabee.doubleratchet.model.DRChainKey
 import studio.lunabee.doubleratchet.model.DRMessageKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
 import studio.lunabee.doubleratchet.model.DRRootKey
 import studio.lunabee.doubleratchet.model.DRSharedSecret
 import studio.lunabee.doubleratchet.model.DerivedKeyMessagePair
+import studio.lunabee.doubleratchet.model.DerivedKeyRootPair
 import studio.lunabee.doubleratchet.model.DoubleRatchetError
 import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.model.InvitationData
 import studio.lunabee.doubleratchet.model.MessageHeader
 import studio.lunabee.doubleratchet.model.SendMessageData
 import studio.lunabee.doubleratchet.model.createRandomUUID
-import studio.lunabee.doubleratchet.model.use
 import studio.lunabee.doubleratchet.storage.DoubleRatchetLocalDatasource
 
 /**
@@ -209,13 +210,10 @@ class DoubleRatchetEngine(
 
         var messageNumber = lastMessageNumber?.inc() ?: 0u
         var messageKey: DRMessageKey? = null
-        val sharedSecret = lazy { DRSharedSecret.empty() }
         val derivedKeyPair = DerivedKeyMessagePair.empty()
         while (messageKey == null) {
             if (messageNumber == newSequenceMessageNumber) {
-                sharedSecret.value.use {
-                    receiveNewSequenceMessage(messageHeader.publicKey, workingConversation, sharedSecret.value, derivedKeyPair)
-                }
+                receiveNewSequenceMessage(messageHeader.publicKey, workingConversation, derivedKeyPair)
                 // Update for next sending
                 updateConversationForNextSend(messageHeader, workingConversation)
             } else {
@@ -255,27 +253,24 @@ class DoubleRatchetEngine(
     private suspend fun receiveNewSequenceMessage(
         publicKey: DRPublicKey,
         conversation: Conversation,
-        sharedSecret: DRSharedSecret,
         derivedKeyPair: DerivedKeyMessagePair,
     ) {
-        doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(
+        val sharedSecret = doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(
             publicKey = publicKey,
             privateKey = conversation.personalKeyPair.privateKey,
-            out = sharedSecret,
         )
-        // TODO optim byteArray newDerivedKeyRootPair.chainKey (?)
-        val newDerivedKeyRootPair = doubleRatchetKeyRepository.deriveRootKeys(
+        doubleRatchetKeyRepository.deriveRootKeys(
             rootKey = conversation.rootKey!!,
             sharedSecret = sharedSecret,
+            out = DerivedKeyRootPair(conversation.rootKey!!, derivedKeyPair.chainKey)
         )
         val newDerivedKeyPair = doubleRatchetKeyRepository.deriveChainKeys(
-            chainKey = newDerivedKeyRootPair.chainKey,
+            chainKey = derivedKeyPair.chainKey,
             out = derivedKeyPair,
         )
 
         sharedSecret.destroy()
         conversation.apply {
-            this.rootKey = newDerivedKeyRootPair.rootKey
             this.receiveChainKey = newDerivedKeyPair.chainKey
             this.lastContactPublicKey = publicKey
             this.receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 0u
