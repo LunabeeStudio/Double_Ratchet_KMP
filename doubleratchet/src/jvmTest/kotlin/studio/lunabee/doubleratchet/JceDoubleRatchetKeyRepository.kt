@@ -75,7 +75,6 @@ class JceDoubleRatchetKeyRepository(
     override suspend fun deriveRootKeys(rootKey: DRRootKey, sharedSecret: DRSharedSecret, out: DerivedKeyRootPair): DerivedKeyRootPair {
         val packedOut = ByteArray(out.rootKey.value.size + out.chainKey.value.size)
         hashEngine.deriveKey(rootKey.value, sharedSecret.value, packedOut)
-        // TODO try to avoid copy by using the packed array instead of DerivedKeyRootPair
         packedOut.copyInto(
             destination = out.rootKey.value,
             startIndex = 0,
@@ -88,7 +87,6 @@ class JceDoubleRatchetKeyRepository(
         return out
     }
 
-    // TODO no return, only fill out param (?) (cf comment DerivedKeyMessagePair useless?)
     override suspend fun deriveChainKeys(chainKey: DRChainKey, out: DerivedKeyMessagePair): DerivedKeyMessagePair {
         hashEngine.deriveKey(chainKey.value, messageSalt, out.messageKey.value)
         hashEngine.deriveKey(chainKey.value, chainSalt, out.chainKey.value)

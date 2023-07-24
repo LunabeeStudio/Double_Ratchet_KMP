@@ -16,7 +16,9 @@
 
 package studio.lunabee.doubleratchet.model
 
-// TODO does this pair makes sense vs 2 separate key (chainKey could be updated without updating the rootKey)
+/**
+ * Wrapper for the output of deriveChainKeys function
+ */
 class DerivedKeyMessagePair(
     val chainKey: DRChainKey,
     val messageKey: DRMessageKey,

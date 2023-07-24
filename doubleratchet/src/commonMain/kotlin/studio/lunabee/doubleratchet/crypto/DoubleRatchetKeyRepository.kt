@@ -18,7 +18,6 @@ package studio.lunabee.doubleratchet.crypto
 
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.DRChainKey
-import studio.lunabee.doubleratchet.model.DRMessageKey
 import studio.lunabee.doubleratchet.model.DRPrivateKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
 import studio.lunabee.doubleratchet.model.DRRootKey
@@ -47,7 +46,7 @@ interface DoubleRatchetKeyRepository {
     suspend fun deriveRootKeys(
         rootKey: DRRootKey,
         sharedSecret: DRSharedSecret,
-        out: DerivedKeyRootPair = DerivedKeyRootPair(DRRootKey.empty(), DRChainKey.empty()),
+        out: DerivedKeyRootPair = DerivedKeyRootPair.empty(),
     ): DerivedKeyRootPair
 
     /**
@@ -55,6 +54,6 @@ interface DoubleRatchetKeyRepository {
      */
     suspend fun deriveChainKeys(
         chainKey: DRChainKey,
-        out: DerivedKeyMessagePair = DerivedKeyMessagePair(DRChainKey.empty(), DRMessageKey.empty()),
+        out: DerivedKeyMessagePair = DerivedKeyMessagePair.empty(),
     ): DerivedKeyMessagePair
 }
