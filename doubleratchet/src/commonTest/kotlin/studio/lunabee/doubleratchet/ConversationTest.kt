@@ -19,20 +19,23 @@ package studio.lunabee.doubleratchet
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
 import studio.lunabee.doubleratchet.model.DRChainKey
+import studio.lunabee.doubleratchet.model.DRRootKey
+import studio.lunabee.doubleratchet.model.DRSharedSecret
 import studio.lunabee.doubleratchet.model.DoubleRatchetError
 import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.model.InvitationData
-import studio.lunabee.doubleratchet.model.DRSharedSecret
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class ConversationTest {
 
     companion object {
         private val random: Random = RandomProviderTest.random
+        val keyLength: Int = random.nextInt(20, 80)
     }
 
     /**
@@ -41,15 +44,15 @@ class ConversationTest {
      */
     @Test
     fun `DH shared secret algorithm test`(): TestResult = runTest {
-        val cryptoRepository1 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
-        val cryptoRepository2 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
-        val keyPairAlice = cryptoRepository1.generateKeyPair()
-        val keyPairBob = cryptoRepository2.generateKeyPair()
-        val sharedSecretAlice = DRSharedSecret(random.nextBytes(DRSharedSecret.DEFAULT_SECRET_LENGTH_BYTE))
-        val sharedSecretBob = DRSharedSecret(random.nextBytes(DRSharedSecret.DEFAULT_SECRET_LENGTH_BYTE))
+        val cryptoRepositoryA = getRepository()
+        val cryptoRepositoryB = getRepository()
+        val keyPairAlice = cryptoRepositoryA.generateKeyPair()
+        val keyPairBob = cryptoRepositoryB.generateKeyPair()
+        val sharedSecretAlice = DRSharedSecret(ByteArray(cryptoRepositoryA.sharedSecretByteSize) { -1 })
+        val sharedSecretBob = DRSharedSecret(ByteArray(cryptoRepositoryB.sharedSecretByteSize) { -2 })
 
-        cryptoRepository1.createDiffieHellmanSharedSecret(keyPairBob.publicKey, keyPairAlice.privateKey, sharedSecretAlice)
-        cryptoRepository2.createDiffieHellmanSharedSecret(keyPairAlice.publicKey, keyPairBob.privateKey, sharedSecretBob)
+        cryptoRepositoryA.createDiffieHellmanSharedSecret(keyPairBob.publicKey, keyPairAlice.privateKey, sharedSecretAlice)
+        cryptoRepositoryB.createDiffieHellmanSharedSecret(keyPairAlice.publicKey, keyPairBob.privateKey, sharedSecretBob)
 
         assertContentEquals(sharedSecretAlice.value, sharedSecretBob.value)
     }
@@ -59,12 +62,31 @@ class ConversationTest {
      *     KDF chains</a>
      */
     @Test
-    fun `KDF algorithm test`(): TestResult = runTest {
-        val chainKey = DRChainKey.random(random)
-        val cryptoRepository1 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
-        val cryptoRepository2 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
-        val value1 = cryptoRepository1.deriveKey(chainKey)
-        val value2 = cryptoRepository2.deriveKey(chainKey)
+    fun `KDF Root algorithm test`(): TestResult = runTest {
+        val sharedSecret = DRSharedSecret(random.nextBytes(keyLength))
+        val rootKey = DRRootKey(random.nextBytes(keyLength))
+        val cryptoRepository1 = getRepository()
+        val cryptoRepository2 = getRepository()
+        val rootKey2 = DRRootKey(rootKey.value.copyOf())
+        val value1 = cryptoRepository1.deriveRootKeys(rootKey, sharedSecret)
+        val value2 = cryptoRepository2.deriveRootKeys(rootKey2, sharedSecret)
+
+        assertContentEquals(value1.rootKey.value, value2.rootKey.value)
+        assertContentEquals(value1.chainKey.value, value2.chainKey.value)
+    }
+
+    /**
+     * @see <a href="https://signal.org/docs/specifications/doubleratchet/#kdf-chains">
+     *     KDF chains</a>
+     */
+    @Test
+    fun `KDF Chain algorithm test`(): TestResult = runTest {
+        val chainKey = DRChainKey(random.nextBytes(keyLength))
+        val chainKey2 = DRChainKey(chainKey.value.copyOf())
+        val cryptoRepository1 = getRepository()
+        val cryptoRepository2 = getRepository()
+        val value1 = cryptoRepository1.deriveChainKeys(chainKey)
+        val value2 = cryptoRepository2.deriveChainKeys(chainKey2)
 
         assertContentEquals(value1.messageKey.value, value2.messageKey.value)
         assertContentEquals(value1.chainKey.value, value2.chainKey.value)
@@ -75,53 +97,79 @@ class ConversationTest {
      *     Double Ratchet</a>
      */
     @Test
-    fun `Double Ratchet KDF+DH algorithm test`(): TestResult = runTest {
-        val chainKey = DRChainKey.random(random)
-        val sharedSecret = DRSharedSecret(random.nextBytes(DRSharedSecret.DEFAULT_SECRET_LENGTH_BYTE))
-        val cryptoRepository1 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
-        val cryptoRepository2 = DoubleRatchetKeyRepositoryFactory.getRepository(random)
-        val value1 = cryptoRepository1.deriveKeys(chainKey, sharedSecret)
-        val value2 = cryptoRepository2.deriveKeys(chainKey, sharedSecret)
+    fun `Double Ratchet algorithm test`(): TestResult = runTest {
+        val sharedSecret = DRSharedSecret(random.nextBytes(keyLength))
+        val rootKey = DRRootKey(random.nextBytes(keyLength))
+        val rootKey2 = DRRootKey(rootKey.value.copyOf())
+        val cryptoRepository1 = getRepository()
+        val cryptoRepository2 = getRepository()
+        val chainKey = DRChainKey.empty(keyLength)
+        val chainKey2 = DRChainKey.empty(keyLength)
+
+        cryptoRepository1.deriveRootKeys(rootKey, sharedSecret, rootKey, chainKey)
+        val value1 = cryptoRepository1.deriveChainKeys(chainKey)
+
+        cryptoRepository2.deriveRootKeys(rootKey2, sharedSecret, rootKey, chainKey2)
+        val value2 = cryptoRepository2.deriveChainKeys(chainKey2)
 
         assertContentEquals(value1.messageKey.value, value2.messageKey.value)
         assertContentEquals(value1.chainKey.value, value2.chainKey.value)
     }
 
     @Test
-    fun `Run conversation flow test`(): TestResult = runTest {
-        val engineAlice = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
-        )
+    fun `Run conversation not setup test`(): TestResult = runTest {
+        val sharedInit = DRSharedSecret(random.nextBytes(keyLength))
         val engineBob = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource("B"),
+            doubleRatchetKeyRepository = getRepository(),
         )
-        val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
-        val aliceToBobConversationId: DoubleRatchetUUID =
-            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
+        val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInit)
         val error = assertFailsWith(DoubleRatchetError::class) {
             engineBob.getSendData(conversationId = bobToAliceInvitation.conversationId)
         }
         assertEquals(DoubleRatchetError.Type.ConversationNotSetup, error.type)
-        val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
-        val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
-        assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
+    }
+
+    @Test
+    fun `Initial root key sharing test`(): TestResult = runTest {
+        val sharedInit = DRSharedSecret(random.nextBytes(keyLength))
+        val datasourceA = PlainMapDoubleRatchetLocalDatasource("A")
+        val datasourceB = PlainMapDoubleRatchetLocalDatasource("B")
+        val engineA = DoubleRatchetEngine(
+            doubleRatchetLocalDatasource = datasourceA,
+            doubleRatchetKeyRepository = getRepository(),
+        )
+        val engineB = DoubleRatchetEngine(
+            doubleRatchetLocalDatasource = datasourceB,
+            doubleRatchetKeyRepository = getRepository(),
+        )
+
+        val invitationFromA = engineA.createInvitation(sharedInit)
+        val conversationIdA = invitationFromA.conversationId
+        val conversationIdB = engineB.createNewConversationFromInvitation(invitationFromA.publicKey, sharedInit)
+        val headerB = engineB.getSendData(conversationIdB)
+        engineA.getReceiveKey(headerB.messageHeader, conversationIdA)
+
+        val valuesB = datasourceB.rootKeys.map { key -> key.value.contentHashCode() }
+        val valuesA = datasourceA.rootKeys.map { key -> key.value.contentHashCode() }
+
+        assertTrue(valuesA.none { value -> value in valuesB })
     }
 
     @Test
     fun `Decrypt already decrypted message failure test`(): TestResult = runTest {
+        val sharedInit = DRSharedSecret(random.nextBytes(keyLength))
         val engineAlice = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource("A"),
+            doubleRatchetKeyRepository = getRepository(),
         )
         val engineBob = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource("B"),
+            doubleRatchetKeyRepository = getRepository(),
         )
-        val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
+        val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInit)
         val aliceToBobConversationId: DoubleRatchetUUID =
-            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
+            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey, sharedInit)
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
         val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
         assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
@@ -133,17 +181,20 @@ class ConversationTest {
 
     @Test
     fun `Run handshake flow test`(): TestResult = runTest {
+        val sharedInitA = DRSharedSecret(random.nextBytes(keyLength))
+        val sharedInitB = DRSharedSecret(sharedInitA.value.copyOf())
         val engineAlice = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource("A"),
+            doubleRatchetKeyRepository = getRepository(),
         )
         val engineBob = DoubleRatchetEngine(
-            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource(),
-            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
+            doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource("B"),
+            doubleRatchetKeyRepository = getRepository(),
         )
-        val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
+        val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInitA)
         val aliceToBobConversationId: DoubleRatchetUUID =
-            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
+            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey, sharedInitB)
+
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
         val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
         assertContentEquals(aliceMessage1.messageKey.value, receivedBob1.value)
@@ -167,23 +218,24 @@ class ConversationTest {
      */
     @Test
     fun `Run basic out-of-order case test`(): TestResult = runTest {
-        val datasourceA = PlainMapDoubleRatchetLocalDatasource()
+        val sharedInit = DRSharedSecret(random.nextBytes(keyLength))
+        val datasourceA = PlainMapDoubleRatchetLocalDatasource("A")
         val engineAlice = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = datasourceA,
-            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
+            doubleRatchetKeyRepository = getRepository(),
         )
-        val datasourceB = PlainMapDoubleRatchetLocalDatasource()
+        val datasourceB = PlainMapDoubleRatchetLocalDatasource("B")
         val engineBob = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = datasourceB,
-            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
+            doubleRatchetKeyRepository = getRepository(),
         )
 
         // Bob invite Alice
-        val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
+        val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInit)
 
         // Alice Accept Bob invitation
         val aliceToBobConversationId: DoubleRatchetUUID =
-            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
+            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey, sharedInit)
 
         // Alice send a message to Bob
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
@@ -206,9 +258,7 @@ class ConversationTest {
         assertContentEquals(aliceMessage2.messageKey.value, receivedBob2.value)
         assertContentEquals(aliceMessage3.messageKey.value, receivedBob3.value)
 
-        assertEquals(1, datasourceA.chainKeys.size) // Alice did not receive message
         assertIsEmpty(datasourceA.messageKeys)
-        assertIsEmpty(datasourceB.chainKeys)
         assertIsEmpty(datasourceB.messageKeys)
     }
 
@@ -218,23 +268,24 @@ class ConversationTest {
      */
     @Test
     fun `Run advanced out-of-order case test`(): TestResult = runTest {
-        val datasourceA = PlainMapDoubleRatchetLocalDatasource()
+        val sharedInit = DRSharedSecret(random.nextBytes(keyLength))
+        val datasourceA = PlainMapDoubleRatchetLocalDatasource("A")
         val engineAlice = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = datasourceA,
-            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
+            doubleRatchetKeyRepository = getRepository(),
         )
-        val datasourceB = PlainMapDoubleRatchetLocalDatasource()
+        val datasourceB = PlainMapDoubleRatchetLocalDatasource("B")
         val engineBob = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = datasourceB,
-            doubleRatchetKeyRepository = DoubleRatchetKeyRepositoryFactory.getRepository(random),
+            doubleRatchetKeyRepository = getRepository(),
         )
 
         // Bob invite Alice
-        val bobToAliceInvitation: InvitationData = engineBob.createInvitation()
+        val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInit)
 
         // Alice Accept Bob invitation
         val aliceToBobConversationId: DoubleRatchetUUID =
-            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey)
+            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey, sharedInit)
 
         // Alice send a message to Bob
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
@@ -265,9 +316,9 @@ class ConversationTest {
         assertContentEquals(aliceMessage2.messageKey.value, receivedBob2.value)
         assertContentEquals(aliceMessage3.messageKey.value, receivedBob3.value)
 
-        assertIsEmpty(datasourceA.chainKeys)
         assertIsEmpty(datasourceA.messageKeys)
-        assertIsEmpty(datasourceB.chainKeys)
         assertIsEmpty(datasourceB.messageKeys)
     }
+
+    private fun getRepository() = DoubleRatchetKeyRepositoryFactory.getRepository(random, keyLength)
 }

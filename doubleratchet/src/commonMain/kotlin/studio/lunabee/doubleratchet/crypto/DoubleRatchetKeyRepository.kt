@@ -18,11 +18,13 @@ package studio.lunabee.doubleratchet.crypto
 
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.DRChainKey
-import studio.lunabee.doubleratchet.model.DerivedKeyPair
 import studio.lunabee.doubleratchet.model.DRMessageKey
 import studio.lunabee.doubleratchet.model.DRPrivateKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
+import studio.lunabee.doubleratchet.model.DRRootKey
 import studio.lunabee.doubleratchet.model.DRSharedSecret
+import studio.lunabee.doubleratchet.model.DerivedKeyMessagePair
+import studio.lunabee.doubleratchet.model.DerivedKeyRootPair
 
 interface DoubleRatchetKeyRepository {
     /**
@@ -31,33 +33,54 @@ interface DoubleRatchetKeyRepository {
     suspend fun generateKeyPair(): AsymmetricKeyPair
 
     /**
-     * Generate a [DRChainKey] for new conversation
-     */
-    suspend fun generateChainKey(): DRChainKey
-
-    /**
      * Generate a [DRSharedSecret] from a contact public key and a personal private key in param array [out]
      */
     suspend fun createDiffieHellmanSharedSecret(
         publicKey: DRPublicKey,
         privateKey: DRPrivateKey,
-        out: DRSharedSecret = DRSharedSecret.empty(),
+        out: DRSharedSecret = DRSharedSecret.empty(sharedSecretByteSize),
     ): DRSharedSecret
 
     /**
-     * Derive a [DRChainKey] with a Key Derivation Function and get a message key and a new chainKey
+     * KDF_RK(rk, dh_out)
      */
-    suspend fun deriveKey(
-        key: DRChainKey,
-        out: DerivedKeyPair = DerivedKeyPair(DRMessageKey.empty(), DRChainKey.empty()),
-    ): DerivedKeyPair
+    suspend fun deriveRootKeys(
+        rootKey: DRRootKey,
+        sharedSecret: DRSharedSecret,
+        outRootKey: DRRootKey = DRRootKey.empty(rootKeyByteSize),
+        outChainKey: DRChainKey = DRChainKey.empty(chainKeyByteSize),
+    ): DerivedKeyRootPair
 
     /**
-     * Derive [DRChainKey] and [DRSharedSecret] with a Key Derivation Function and get a message key and a new chainKey
+     * KDF_CK(ck, ck_out)
      */
-    suspend fun deriveKeys(
+    suspend fun deriveChainKeys(
         chainKey: DRChainKey,
-        sharedSecret: DRSharedSecret,
-        out: DerivedKeyPair = DerivedKeyPair(DRMessageKey.empty(), DRChainKey.empty()),
-    ): DerivedKeyPair
+        outChainKey: DRChainKey = DRChainKey.empty(chainKeyByteSize),
+        outMessageKey: DRMessageKey = DRMessageKey.empty(messageKeyByteSize),
+    ): DerivedKeyMessagePair
+
+    /**
+     * Message key size in bytes. Default 32
+     */
+    val messageKeyByteSize: Int
+        get() = 32
+
+    /**
+     * Chain key size in bytes. Default 32
+     */
+    val chainKeyByteSize: Int
+        get() = 32
+
+    /**
+     * Root key size in bytes. Default 32
+     */
+    val rootKeyByteSize: Int
+        get() = 32
+
+    /**
+     * Root key size in bytes. Default 32
+     */
+    val sharedSecretByteSize: Int
+        get() = 32
 }

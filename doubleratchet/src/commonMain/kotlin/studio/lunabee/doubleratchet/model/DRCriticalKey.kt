@@ -28,9 +28,3 @@ interface DRCriticalKey {
         value.randomize()
     }
 }
-
-inline fun <T : DRCriticalKey, U> T.use(block: (T) -> U): U = try {
-    block(this)
-} finally {
-    this.destroy()
-}

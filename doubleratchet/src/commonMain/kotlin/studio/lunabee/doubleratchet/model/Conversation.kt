@@ -16,61 +16,59 @@
 
 package studio.lunabee.doubleratchet.model
 
-class Conversation private constructor(
+class Conversation internal constructor(
     val id: DoubleRatchetUUID,
     personalKeyPair: AsymmetricKeyPair,
-    sendChainKey: DRChainKey? = null,
+    messageNumber: UInt = 0u,
+    sequenceNumber: UInt = 0u,
+    rootKey: DRRootKey? = null,
+    sendingChainKey: DRChainKey? = null,
     receiveChainKey: DRChainKey? = null,
-    contactPublicKey: DRPublicKey? = null,
-    lastMessageReceivedType: MessageType? = null,
-    sentLastMessageData: MessageConversationCounter? = null,
+    lastContactPublicKey: DRPublicKey? = null,
     receivedLastMessageNumber: UInt? = null,
 ) {
     var personalKeyPair: AsymmetricKeyPair = personalKeyPair
         internal set
-    var sendChainKey: DRChainKey? = sendChainKey
+    var rootKey: DRRootKey? = rootKey
+        internal set
+    var sendingChainKey: DRChainKey? = sendingChainKey
         internal set
     var receiveChainKey: DRChainKey? = receiveChainKey
         internal set
-    var contactPublicKey: DRPublicKey? = contactPublicKey
+    var lastContactPublicKey: DRPublicKey? = lastContactPublicKey
         internal set
-    var lastMessageReceivedType: MessageType? = lastMessageReceivedType
+    var nextMessageNumber: UInt = messageNumber
         internal set
-    var sentLastMessageData: MessageConversationCounter? = sentLastMessageData
+    var nextSequenceNumber: UInt = sequenceNumber
         internal set
     var receivedLastMessageNumber: UInt? = receivedLastMessageNumber
         internal set
 
-    fun isReadyForMessageSending(): Boolean {
-        return sendChainKey != null && contactPublicKey != null
-    }
-
-    fun isReadyForMessageReceiving(): Boolean {
-        return receiveChainKey != null && contactPublicKey != null
-    }
-
-    enum class MessageType {
-        Sent, Received
+    fun destroy() {
+        personalKeyPair.privateKey.destroy()
+        rootKey?.destroy()
+        sendingChainKey?.destroy()
+        receiveChainKey?.destroy()
+        lastContactPublicKey?.destroy()
     }
 
     companion object {
-        fun createNew(id: DoubleRatchetUUID, personalKeyPair: AsymmetricKeyPair): Conversation = Conversation(
+        fun createNew(id: DoubleRatchetUUID, personalKeyPair: AsymmetricKeyPair, initialRootKey: DRRootKey): Conversation = Conversation(
             id = id,
             personalKeyPair = personalKeyPair,
+            rootKey = initialRootKey,
         )
 
         fun createFromInvitation(
             id: DoubleRatchetUUID,
             personalKeyPair: AsymmetricKeyPair,
-            sendChainKey: DRChainKey,
-            receiveChainKey: DRChainKey,
-            contactPublicKey: DRPublicKey,
+            rootKey: DRRootKey,
+            sendingChainKey: DRChainKey,
         ): Conversation = Conversation(
             id = id,
             personalKeyPair = personalKeyPair,
-            sendChainKey = sendChainKey,
-            receiveChainKey = receiveChainKey,
-            contactPublicKey = contactPublicKey,
+            rootKey = rootKey,
+            sendingChainKey = sendingChainKey,
         )
     }
 }

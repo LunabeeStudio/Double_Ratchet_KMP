@@ -19,10 +19,13 @@ package studio.lunabee.doubleratchet
 import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.DRChainKey
-import studio.lunabee.doubleratchet.model.DerivedKeyPair
+import studio.lunabee.doubleratchet.model.DRMessageKey
 import studio.lunabee.doubleratchet.model.DRPrivateKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
+import studio.lunabee.doubleratchet.model.DRRootKey
 import studio.lunabee.doubleratchet.model.DRSharedSecret
+import studio.lunabee.doubleratchet.model.DerivedKeyMessagePair
+import studio.lunabee.doubleratchet.model.DerivedKeyRootPair
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
 import java.security.SecureRandom
@@ -39,10 +42,16 @@ import kotlin.random.Random
  */
 class JceDoubleRatchetKeyRepository(
     private val random: Random,
+    keyLength: Int,
 ) : DoubleRatchetKeyRepository {
     private val secureRandom = SecureRandom.getInstance("SHA1PRNG").apply {
         setSeed(random.nextLong())
     }
+
+    override val messageKeyByteSize: Int = keyLength
+    override val chainKeyByteSize: Int = keyLength
+    override val rootKeyByteSize: Int = keyLength
+    override val sharedSecretByteSize: Int = 32 // secp256r1
 
     override suspend fun generateKeyPair(): AsymmetricKeyPair {
         val ecSpec = ECGenParameterSpec(NAMED_CURVE_SPEC)
@@ -54,8 +63,6 @@ class JceDoubleRatchetKeyRepository(
             privateKey = DRPrivateKey(javaKeyPair.private.encoded),
         )
     }
-
-    override suspend fun generateChainKey(): DRChainKey = DRChainKey.random(random)
 
     override suspend fun createDiffieHellmanSharedSecret(
         publicKey: DRPublicKey,
@@ -72,17 +79,34 @@ class JceDoubleRatchetKeyRepository(
         return out
     }
 
-    override suspend fun deriveKey(key: DRChainKey, out: DerivedKeyPair): DerivedKeyPair {
-        hashEngine.deriveKey(key.value, messageSalt, out.messageKey.value)
-        hashEngine.deriveKey(key.value, chainSalt, out.chainKey.value)
-        return out
+    override suspend fun deriveRootKeys(
+        rootKey: DRRootKey,
+        sharedSecret: DRSharedSecret,
+        outRootKey: DRRootKey,
+        outChainKey: DRChainKey,
+    ): DerivedKeyRootPair {
+        val packedOut = ByteArray(outRootKey.value.size + outChainKey.value.size)
+        hashEngine.deriveKey(rootKey.value, sharedSecret.value, packedOut)
+        packedOut.copyInto(
+            destination = outRootKey.value,
+            startIndex = 0,
+            endIndex = outRootKey.value.size,
+        )
+        packedOut.copyInto(
+            destination = outChainKey.value,
+            startIndex = outRootKey.value.size,
+        )
+        return DerivedKeyRootPair(outRootKey, outChainKey)
     }
 
-    override suspend fun deriveKeys(chainKey: DRChainKey, sharedSecret: DRSharedSecret, out: DerivedKeyPair): DerivedKeyPair {
-        val derivedWithSharedSecretKey = hashEngine.deriveKey(chainKey.value, sharedSecret.value)
-        hashEngine.deriveKey(derivedWithSharedSecretKey, messageSalt, out.messageKey.value)
-        hashEngine.deriveKey(derivedWithSharedSecretKey, chainSalt, out.chainKey.value)
-        return out
+    override suspend fun deriveChainKeys(
+        chainKey: DRChainKey,
+        outChainKey: DRChainKey,
+        outMessageKey: DRMessageKey,
+    ): DerivedKeyMessagePair {
+        hashEngine.deriveKey(chainKey.value, messageSalt, outMessageKey.value)
+        hashEngine.deriveKey(chainKey.value, chainSalt, outChainKey.value)
+        return DerivedKeyMessagePair(outChainKey, outMessageKey)
     }
 
     private companion object {

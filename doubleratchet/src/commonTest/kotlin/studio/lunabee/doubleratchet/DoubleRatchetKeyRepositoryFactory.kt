@@ -20,5 +20,5 @@ import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import kotlin.random.Random
 
 expect object DoubleRatchetKeyRepositoryFactory {
-    fun getRepository(random: Random): DoubleRatchetKeyRepository
+    fun getRepository(random: Random, keyLength: Int): DoubleRatchetKeyRepository
 }

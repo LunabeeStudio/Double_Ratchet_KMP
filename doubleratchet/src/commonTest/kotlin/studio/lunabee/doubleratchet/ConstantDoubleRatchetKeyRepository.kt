@@ -19,15 +19,32 @@ package studio.lunabee.doubleratchet
 import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
 import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.DRChainKey
+import studio.lunabee.doubleratchet.model.DRMessageKey
 import studio.lunabee.doubleratchet.model.DRPrivateKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
+import studio.lunabee.doubleratchet.model.DRRootKey
 import studio.lunabee.doubleratchet.model.DRSharedSecret
-import studio.lunabee.doubleratchet.model.DerivedKeyPair
+import studio.lunabee.doubleratchet.model.DerivedKeyMessagePair
+import studio.lunabee.doubleratchet.model.DerivedKeyRootPair
 
 /**
  * Dummy implementation of [DoubleRatchetKeyRepository] with constant arrays
  */
-object ConstantDoubleRatchetKeyRepository : DoubleRatchetKeyRepository {
+class ConstantDoubleRatchetKeyRepository(keyLength: Int) : DoubleRatchetKeyRepository {
+
+    override val messageKeyByteSize: Int = keyLength
+    override val chainKeyByteSize: Int = keyLength
+    override val rootKeyByteSize: Int = keyLength
+    override val sharedSecretByteSize: Int = keyLength
+
+    companion object {
+        val rootKeys: List<ByteArray> = List(100) {
+            RandomProviderTest.random.nextBytes(ConversationTest.keyLength)
+        }
+    }
+
+    private var rootCounter: Int = 0
+
     override suspend fun generateKeyPair(): AsymmetricKeyPair {
         return AsymmetricKeyPair(
             publicKey = DRPublicKey(byteArrayOf(1)),
@@ -35,38 +52,31 @@ object ConstantDoubleRatchetKeyRepository : DoubleRatchetKeyRepository {
         )
     }
 
-    override suspend fun generateChainKey(): DRChainKey {
-        return DRChainKey(byteArrayOf(3))
-    }
-
     override suspend fun createDiffieHellmanSharedSecret(
         publicKey: DRPublicKey,
         privateKey: DRPrivateKey,
         out: DRSharedSecret,
     ): DRSharedSecret {
-        out.value.indices.forEach {
-            out.value[it] = 4
-        }
+        out.value.fill(3)
         return out
     }
 
-    override suspend fun deriveKey(key: DRChainKey, out: DerivedKeyPair): DerivedKeyPair {
-        out.messageKey.value.indices.forEach {
-            out.messageKey.value[it] = 5
-        }
-        out.chainKey.value.indices.forEach {
-            out.chainKey.value[it] = 6
-        }
-        return out
+    override suspend fun deriveRootKeys(
+        rootKey: DRRootKey,
+        sharedSecret: DRSharedSecret,
+        outRootKey: DRRootKey,
+        outChainKey: DRChainKey,
+    ): DerivedKeyRootPair {
+        rootKeys[rootCounter++].copyInto(outRootKey.value)
+        return DerivedKeyRootPair(outRootKey, outChainKey)
     }
 
-    override suspend fun deriveKeys(chainKey: DRChainKey, sharedSecret: DRSharedSecret, out: DerivedKeyPair): DerivedKeyPair {
-        out.messageKey.value.indices.forEach {
-            out.messageKey.value[it] = 7
-        }
-        out.chainKey.value.indices.forEach {
-            out.chainKey.value[it] = 8
-        }
-        return out
+    override suspend fun deriveChainKeys(
+        chainKey: DRChainKey,
+        outChainKey: DRChainKey,
+        outMessageKey: DRMessageKey,
+    ): DerivedKeyMessagePair {
+        outMessageKey.value.fill(4)
+        return DerivedKeyMessagePair(outChainKey, outMessageKey)
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Lunabee Studio
+ * Copyright (c) 2023-2023 Lunabee Studio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package studio.lunabee.doubleratchet
+package studio.lunabee.doubleratchet.model
 
-import studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository
-import kotlin.random.Random
-
-actual object DoubleRatchetKeyRepositoryFactory {
-
-    actual fun getRepository(random: Random, keyLength: Int): DoubleRatchetKeyRepository = ConstantDoubleRatchetKeyRepository(
-        keyLength,
-    )
-}
+/**
+ * Wrapper for the output of deriveRootKeys function
+ */
+class DerivedKeyRootPair(
+    val rootKey: DRRootKey,
+    val chainKey: DRChainKey,
+)
