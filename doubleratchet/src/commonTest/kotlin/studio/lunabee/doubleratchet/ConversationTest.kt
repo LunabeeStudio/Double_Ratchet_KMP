@@ -150,14 +150,9 @@ class ConversationTest {
         val headerB = engineB.getSendData(conversationIdB)
         engineA.getReceiveKey(headerB.messageHeader, conversationIdA)
 
-        val valuesB = datasourceB.rootKeys.map { key -> key.value }
-        val valuesA = datasourceA.rootKeys.map { key -> key.value }
-        println(
-            valuesA.joinToString { it.joinToString() },
-        )
-        println(
-            valuesB.joinToString { it.joinToString() },
-        )
+        val valuesB = datasourceB.rootKeys.map { key -> key.value.contentHashCode() }
+        val valuesA = datasourceA.rootKeys.map { key -> key.value.contentHashCode() }
+
         assertTrue(valuesA.none { value -> value in valuesB })
     }
 
@@ -186,7 +181,8 @@ class ConversationTest {
 
     @Test
     fun `Run handshake flow test`(): TestResult = runTest {
-        val sharedInit = DRSharedSecret(random.nextBytes(keyLength))
+        val sharedInitA = DRSharedSecret(random.nextBytes(keyLength))
+        val sharedInitB = DRSharedSecret(sharedInitA.value.copyOf())
         val engineAlice = DoubleRatchetEngine(
             doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource("A"),
             doubleRatchetKeyRepository = getRepository(),
@@ -195,9 +191,9 @@ class ConversationTest {
             doubleRatchetLocalDatasource = PlainMapDoubleRatchetLocalDatasource("B"),
             doubleRatchetKeyRepository = getRepository(),
         )
-        val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInit)
+        val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInitA)
         val aliceToBobConversationId: DoubleRatchetUUID =
-            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey, sharedInit)
+            engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey, sharedInitB)
 
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
         val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)

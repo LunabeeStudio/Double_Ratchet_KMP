@@ -39,7 +39,7 @@ class PlainMapDoubleRatchetLocalDatasource(
             check(field == null || value!!.id == field?.id)
             val newRootKey = value?.rootKey
             if (newRootKey != null && !newRootKey.value.contentEquals(rootKeys.lastOrNull()?.value)) {
-                rootKeys += newRootKey.value.copyOf().let { DRRootKey(it) }
+                rootKeys += DRRootKey(newRootKey.value.copyOf())
             }
             field = value
         }

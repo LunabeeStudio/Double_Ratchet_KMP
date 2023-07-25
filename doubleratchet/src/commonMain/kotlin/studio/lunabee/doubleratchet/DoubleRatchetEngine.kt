@@ -43,17 +43,20 @@ class DoubleRatchetEngine(
     /**
      * Generate the data needed to create an invitation to start a new conversation
      *
-     * @param newConversationId The id to be used for the conversation
      * @param sharedSalt An initial shared salt
+     * @param newConversationId The id to be used for the conversation
      *
-     * @return the conversation id
+     * @return the invitation to send
      */
-    suspend fun createInvitation(sharedSalt: DRSharedSecret, newConversationId: DoubleRatchetUUID = createRandomUUID()): InvitationData {
+    suspend fun createInvitation(
+        sharedSalt: DRSharedSecret,
+        newConversationId: DoubleRatchetUUID = createRandomUUID(),
+    ): InvitationData {
         val keyPair: AsymmetricKeyPair = doubleRatchetKeyRepository.generateKeyPair()
         val conversation = Conversation.createNew(
             id = newConversationId,
             personalKeyPair = keyPair,
-            initialRootKey = DRRootKey(sharedSalt.value),
+            initialRootKey = DRRootKey(sharedSalt.value.copyOf()),
         )
         saveAndDestroy(conversation)
         return InvitationData(
@@ -78,7 +81,7 @@ class DoubleRatchetEngine(
     ): DoubleRatchetUUID {
         val keyPair: AsymmetricKeyPair = doubleRatchetKeyRepository.generateKeyPair()
         val sharedSecret = doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(contactPublicKey, keyPair.privateKey)
-        val rootKey = DRRootKey(sharedSalt.value) // Initial root key is the shared secret
+        val rootKey = DRRootKey(sharedSalt.value.copyOf())
         val keyRootPair = doubleRatchetKeyRepository.deriveRootKeys(rootKey, sharedSecret)
         val conversation = Conversation.createFromInvitation(
             id = newConversationId,
@@ -102,7 +105,10 @@ class DoubleRatchetEngine(
         val sendingChainKey = conversation.sendingChainKey
             ?: throw DoubleRatchetError(DoubleRatchetError.Type.ConversationNotSetup)
 
-        val messageKey = doubleRatchetKeyRepository.deriveChainKeys(sendingChainKey, sendingChainKey).messageKey
+        val messageKey = doubleRatchetKeyRepository.deriveChainKeys(
+            chainKey = sendingChainKey,
+            outChainKey = sendingChainKey,
+        ).messageKey
 
         val messageData = SendMessageData(
             messageHeader = MessageHeader(
@@ -145,6 +151,7 @@ class DoubleRatchetEngine(
         } ?: false
 
         return if (isMessageKeyAlreadyGenerated) {
+            conversation.destroy()
             popStoredMessageKey(messageHeader, conversationId)
         } else {
             computeNextMessageKeyAndUpdateConversation(messageHeader, conversation)
