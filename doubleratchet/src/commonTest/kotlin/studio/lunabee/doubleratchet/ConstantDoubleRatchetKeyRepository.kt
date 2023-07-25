@@ -37,6 +37,14 @@ class ConstantDoubleRatchetKeyRepository(keyLength: Int) : DoubleRatchetKeyRepos
     override val rootKeyByteSize: Int = keyLength
     override val sharedSecretByteSize: Int = keyLength
 
+    companion object {
+        val rootKeys: List<ByteArray> = List(100) {
+            RandomProviderTest.random.nextBytes(ConversationTest.keyLength)
+        }
+    }
+
+    private var rootCounter: Int = 0
+
     override suspend fun generateKeyPair(): AsymmetricKeyPair {
         return AsymmetricKeyPair(
             publicKey = DRPublicKey(byteArrayOf(1)),
@@ -49,9 +57,7 @@ class ConstantDoubleRatchetKeyRepository(keyLength: Int) : DoubleRatchetKeyRepos
         privateKey: DRPrivateKey,
         out: DRSharedSecret,
     ): DRSharedSecret {
-        out.value.indices.forEach {
-            out.value[it] = 4
-        }
+        out.value.fill(3)
         return out
     }
 
@@ -61,12 +67,7 @@ class ConstantDoubleRatchetKeyRepository(keyLength: Int) : DoubleRatchetKeyRepos
         outRootKey: DRRootKey,
         outChainKey: DRChainKey,
     ): DerivedKeyRootPair {
-        outRootKey.value.indices.forEach {
-            outRootKey.value[it] = 5
-        }
-        outChainKey.value.indices.forEach {
-            outChainKey.value[it] = 6
-        }
+        rootKeys[rootCounter++].copyInto(outRootKey.value)
         return DerivedKeyRootPair(outRootKey, outChainKey)
     }
 
@@ -75,12 +76,7 @@ class ConstantDoubleRatchetKeyRepository(keyLength: Int) : DoubleRatchetKeyRepos
         outChainKey: DRChainKey,
         outMessageKey: DRMessageKey,
     ): DerivedKeyMessagePair {
-        outChainKey.value.indices.forEach {
-            outChainKey.value[it] = 7
-        }
-        outMessageKey.value.indices.forEach {
-            outMessageKey.value[it] = 8
-        }
+        outMessageKey.value.fill(4)
         return DerivedKeyMessagePair(outChainKey, outMessageKey)
     }
 }

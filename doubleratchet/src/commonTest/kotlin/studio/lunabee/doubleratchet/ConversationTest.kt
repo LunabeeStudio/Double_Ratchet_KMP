@@ -35,7 +35,7 @@ class ConversationTest {
 
     companion object {
         private val random: Random = RandomProviderTest.random
-        private val keyLength: Int = random.nextInt(20, 80)
+        val keyLength: Int = random.nextInt(20, 80)
     }
 
     /**
