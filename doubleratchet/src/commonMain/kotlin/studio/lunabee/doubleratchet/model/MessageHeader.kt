@@ -18,6 +18,6 @@ package studio.lunabee.doubleratchet.model
 
 class MessageHeader(
     val publicKey: DRPublicKey,
-    val messageNumber: UInt,
-    val sequenceNumber: UInt,
+    val messageNumber: Int,
+    val sequenceNumber: Int,
 )

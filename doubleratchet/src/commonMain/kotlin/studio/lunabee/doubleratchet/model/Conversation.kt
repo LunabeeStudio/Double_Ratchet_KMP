@@ -19,13 +19,13 @@ package studio.lunabee.doubleratchet.model
 class Conversation internal constructor(
     val id: DoubleRatchetUUID,
     personalKeyPair: AsymmetricKeyPair,
-    messageNumber: UInt = 0u,
-    sequenceNumber: UInt = 0u,
+    messageNumber: Int = 0,
+    sequenceNumber: Int = 0,
     rootKey: DRRootKey? = null,
     sendingChainKey: DRChainKey? = null,
     receiveChainKey: DRChainKey? = null,
     lastContactPublicKey: DRPublicKey? = null,
-    receivedLastMessageNumber: UInt? = null,
+    receivedLastMessageNumber: Int? = null,
 ) {
     var personalKeyPair: AsymmetricKeyPair = personalKeyPair
         internal set
@@ -37,11 +37,11 @@ class Conversation internal constructor(
         internal set
     var lastContactPublicKey: DRPublicKey? = lastContactPublicKey
         internal set
-    var nextMessageNumber: UInt = messageNumber
+    var nextMessageNumber: Int = messageNumber
         internal set
-    var nextSequenceNumber: UInt = sequenceNumber
+    var nextSequenceNumber: Int = sequenceNumber
         internal set
-    var receivedLastMessageNumber: UInt? = receivedLastMessageNumber
+    var receivedLastMessageNumber: Int? = receivedLastMessageNumber
         internal set
 
     fun destroy() {
