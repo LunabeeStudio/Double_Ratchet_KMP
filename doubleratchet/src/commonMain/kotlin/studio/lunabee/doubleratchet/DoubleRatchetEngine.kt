@@ -173,13 +173,13 @@ class DoubleRatchetEngine(
     ): DRMessageKey {
         val lastMessageNumber = conversation.receivedLastMessageNumber
 
-        val newSequenceMessageNumber: UInt? = if (messageHeader.publicKey.contentEquals(conversation.lastContactPublicKey)) {
+        val newSequenceMessageNumber: Int? = if (messageHeader.publicKey.contentEquals(conversation.lastContactPublicKey)) {
             null
         } else {
             messageHeader.messageNumber - messageHeader.sequenceNumber
         }
 
-        var messageNumber = lastMessageNumber?.inc() ?: 0u
+        var messageNumber = lastMessageNumber?.inc() ?: 0
         val messageKey = DRMessageKey.empty(doubleRatchetKeyRepository.messageKeyByteSize)
         conversation.receiveChainKey = conversation.receiveChainKey ?: DRChainKey.empty(doubleRatchetKeyRepository.chainKeyByteSize)
         while (messageNumber <= messageHeader.messageNumber) {
@@ -212,7 +212,7 @@ class DoubleRatchetEngine(
             outMessageKey = messageKey,
         )
         conversation.apply {
-            receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 1u
+            receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 1
         }
     }
 
@@ -240,7 +240,7 @@ class DoubleRatchetEngine(
 
         conversation.apply {
             this.lastContactPublicKey = publicKey
-            this.receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 0u
+            this.receivedLastMessageNumber = conversation.receivedLastMessageNumber?.inc() ?: 0
         }
     }
 
@@ -261,11 +261,11 @@ class DoubleRatchetEngine(
             this.rootKey = derivedKeyPair.rootKey
             this.personalKeyPair = newKeyPair
             this.nextMessageNumber = conversation.nextMessageNumber
-            this.nextSequenceNumber = 0u
+            this.nextSequenceNumber = 0
         }
     }
 
-    private fun getMessageKeyId(conversationId: DoubleRatchetUUID, messageNumber: UInt): String {
+    private fun getMessageKeyId(conversationId: DoubleRatchetUUID, messageNumber: Int): String {
         return "${conversationId.uuidString()} - $messageNumber"
     }
 
