@@ -24,7 +24,7 @@ import kotlin.jvm.JvmInline
  * @see <a href="https://signal.org/docs/specifications/doubleratchet/#state-variables">State variables</a>
  */
 @JvmInline
-value class DRRootKey internal constructor(override val value: ByteArray) : DRCriticalKey {
+value class DRRootKey(override val value: ByteArray) : DRCriticalKey {
     companion object {
         fun empty(length: Int): DRRootKey = DRRootKey(ByteArray(length))
     }

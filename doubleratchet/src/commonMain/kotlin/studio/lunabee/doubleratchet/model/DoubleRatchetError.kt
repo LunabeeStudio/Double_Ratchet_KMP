@@ -21,7 +21,6 @@ class DoubleRatchetError(val type: Type) : Error(type.message) {
     enum class Type(val message: String) {
         ConversationNotSetup("The conversation is not setup"),
         ConversationNotFound("The conversation doesn't exist"),
-        ConversationAlreadySetup("The conversation is already setup"),
         MessageKeyNotFound("The message key is not found"),
     }
 }

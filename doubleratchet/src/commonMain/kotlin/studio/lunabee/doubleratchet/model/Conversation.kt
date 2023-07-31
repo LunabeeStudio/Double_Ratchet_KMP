@@ -16,7 +16,7 @@
 
 package studio.lunabee.doubleratchet.model
 
-class Conversation internal constructor(
+class Conversation(
     val id: DoubleRatchetUUID,
     personalKeyPair: AsymmetricKeyPair,
     messageNumber: UInt = 0u,
