@@ -22,5 +22,6 @@ class DoubleRatchetError(val type: Type) : Error(type.message) {
         ConversationNotSetup("The conversation is not setup"),
         ConversationNotFound("The conversation doesn't exist"),
         MessageKeyNotFound("The message key is not found"),
+        SharedSaltWrongSize("The shared salt size must be equal to the rootKeySize of the DoubleRatchetKeyRepository"),
     }
 }

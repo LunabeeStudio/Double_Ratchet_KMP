@@ -52,6 +52,9 @@ class DoubleRatchetEngine(
         sharedSalt: DRSharedSecret,
         newConversationId: DoubleRatchetUUID = createRandomUUID(),
     ): InvitationData {
+        if (sharedSalt.value.size != doubleRatchetKeyRepository.rootKeyByteSize) {
+            throw DoubleRatchetError(DoubleRatchetError.Type.SharedSaltWrongSize)
+        }
         val keyPair: AsymmetricKeyPair = doubleRatchetKeyRepository.generateKeyPair()
         val conversation = Conversation.createNew(
             id = newConversationId,
@@ -79,6 +82,9 @@ class DoubleRatchetEngine(
         sharedSalt: DRSharedSecret,
         newConversationId: DoubleRatchetUUID = createRandomUUID(),
     ): DoubleRatchetUUID {
+        if (sharedSalt.value.size != doubleRatchetKeyRepository.rootKeyByteSize) {
+            throw DoubleRatchetError(DoubleRatchetError.Type.SharedSaltWrongSize)
+        }
         val keyPair: AsymmetricKeyPair = doubleRatchetKeyRepository.generateKeyPair()
         val sharedSecret = doubleRatchetKeyRepository.createDiffieHellmanSharedSecret(contactPublicKey, keyPair.privateKey)
         val rootKey = DRRootKey(sharedSalt.value.copyOf())
