@@ -21,6 +21,7 @@ import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.Conversation
 import studio.lunabee.doubleratchet.model.DRChainKey
 import studio.lunabee.doubleratchet.model.DRMessageKey
+import studio.lunabee.doubleratchet.model.DRMessageKeyId
 import studio.lunabee.doubleratchet.model.DRPublicKey
 import studio.lunabee.doubleratchet.model.DRRootKey
 import studio.lunabee.doubleratchet.model.DRSharedSecret
@@ -168,7 +169,7 @@ class DoubleRatchetEngine(
         messageHeader: MessageHeader,
         conversationId: DoubleRatchetUUID,
     ): DRMessageKey {
-        val messageKeyId = getMessageKeyId(conversationId, messageHeader.messageNumber)
+        val messageKeyId = DRMessageKeyId(conversationId, messageHeader.messageNumber)
         return doubleRatchetLocalDatasource.popMessageKey(messageKeyId)
             ?: throw DoubleRatchetError(DoubleRatchetError.Type.MessageKeyNotFound)
     }
@@ -198,7 +199,7 @@ class DoubleRatchetEngine(
 
             if (messageNumber != messageHeader.messageNumber) {
                 doubleRatchetLocalDatasource.saveMessageKey(
-                    id = getMessageKeyId(conversation.id, messageNumber),
+                    id = DRMessageKeyId(conversation.id, messageNumber),
                     key = messageKey,
                 )
             }
@@ -269,10 +270,6 @@ class DoubleRatchetEngine(
             this.nextMessageNumber = conversation.nextMessageNumber
             this.nextSequenceNumber = 0
         }
-    }
-
-    private fun getMessageKeyId(conversationId: DoubleRatchetUUID, messageNumber: Int): String {
-        return "${conversationId.uuidString()} - $messageNumber"
     }
 
     private suspend fun saveAndDestroy(conversation: Conversation) {

@@ -18,6 +18,7 @@ package studio.lunabee.doubleratchet.storage
 
 import studio.lunabee.doubleratchet.model.Conversation
 import studio.lunabee.doubleratchet.model.DRMessageKey
+import studio.lunabee.doubleratchet.model.DRMessageKeyId
 import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 
 /**
@@ -26,10 +27,10 @@ import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 interface DoubleRatchetLocalDatasource {
     suspend fun saveOrUpdateConversation(conversation: Conversation)
     suspend fun getConversation(id: DoubleRatchetUUID): Conversation?
-    suspend fun saveMessageKey(id: String, key: DRMessageKey)
+    suspend fun saveMessageKey(id: DRMessageKeyId, key: DRMessageKey)
 
     /**
      * Return and delete [DRMessageKey] with id [id]
      */
-    suspend fun popMessageKey(id: String): DRMessageKey?
+    suspend fun popMessageKey(id: DRMessageKeyId): DRMessageKey?
 }

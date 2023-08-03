@@ -20,6 +20,7 @@ import studio.lunabee.doubleratchet.model.AsymmetricKeyPair
 import studio.lunabee.doubleratchet.model.Conversation
 import studio.lunabee.doubleratchet.model.DRChainKey
 import studio.lunabee.doubleratchet.model.DRMessageKey
+import studio.lunabee.doubleratchet.model.DRMessageKeyId
 import studio.lunabee.doubleratchet.model.DRPrivateKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
 import studio.lunabee.doubleratchet.model.DRRootKey
@@ -82,12 +83,12 @@ class PlainMapDoubleRatchetLocalDatasource(
         null
     }
 
-    override suspend fun saveMessageKey(id: String, key: DRMessageKey) {
-        messageKeys[id] = DRMessageKey(key.value.copyOf())
+    override suspend fun saveMessageKey(id: DRMessageKeyId, key: DRMessageKey) {
+        messageKeys[id.value] = DRMessageKey(key.value.copyOf())
     }
 
-    override suspend fun popMessageKey(id: String): DRMessageKey? {
-        return messageKeys.remove(id)
+    override suspend fun popMessageKey(id: DRMessageKeyId): DRMessageKey? {
+        return messageKeys.remove(id.value)
     }
 
     override fun toString(): String {
