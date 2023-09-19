@@ -6,16 +6,26 @@
 
 [plugins]
 
-detekt = { id = "io.gitlab.arturbosch.detekt", version = "_" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+kmp = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 
 [versions]
 
+kotlin = "1.9.10"
+##  ⬆ = "1.9.20-Beta"
 
+kotlinx-coroutines = "1.7.3"
+
+junit-jupiter = "5.10.0"
+
+bouncycastle = "1.76"
+
+detekt = "1.23.1"
 
 [libraries]
 
-junit = { module = "org.junit.jupiter:junit-jupiter-api", version = "_" }
-kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version = "_" }
-kotlinx-coroutine-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version = "_" }
-bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version = "_" }
-detekt-formating = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version = "_" }
+kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
+kotlinx-coroutine-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+bouncycastle = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
+junit = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit-jupiter" }
+detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }
