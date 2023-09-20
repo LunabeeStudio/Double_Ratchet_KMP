@@ -15,17 +15,16 @@
  */
 
 plugins {
-    // trick: for the same plugin versions in all sub-modules
-    kotlin("multiplatform").apply(false)
+    alias(libs.plugins.kmp) apply false
     alias(libs.plugins.detekt)
 }
 
 tasks.register("clean", Delete::class) {
-    delete(rootProject.buildDir)
+    delete(rootProject.layout.buildDirectory.asFile)
 }
 
 dependencies {
-    detektPlugins(libs.detekt.formating)
+    detektPlugins(libs.detekt.formatting)
 }
 
 detekt {
@@ -42,9 +41,9 @@ tasks.detekt.configure {
     exclude("**/build/**")
     reports {
         xml.required.set(true)
-        xml.outputLocation.set(file("$buildDir/reports/detekt/detekt-report.xml"))
+        xml.outputLocation.set(file("${layout.buildDirectory.asFile.get().path}/reports/detekt/detekt-report.xml"))
 
         html.required.set(true)
-        html.outputLocation.set(file("$buildDir/reports/detekt/detekt-report.html"))
+        html.outputLocation.set(file("${layout.buildDirectory.asFile.get().path}/reports/detekt/detekt-report.html"))
     }
 }
