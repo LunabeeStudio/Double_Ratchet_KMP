@@ -17,7 +17,11 @@
 package studio.lunabee.doubleratchet.model
 
 /**
- * Wrapper for the output of deriveChainKeys function
+ * Container for the pair of keys returned by the [KDF_CK][studio.lunabee.doubleratchet.crypto.DoubleRatchetKeyRepository.deriveChainKeys]
+ * function
+ *
+ * @property chainKey the derived chain key
+ * @property messageKey the derived message key
  */
 class DerivedKeyMessagePair(
     val chainKey: DRChainKey,

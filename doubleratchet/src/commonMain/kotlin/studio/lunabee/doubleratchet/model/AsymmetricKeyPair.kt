@@ -16,6 +16,12 @@
 
 package studio.lunabee.doubleratchet.model
 
+/**
+ * Container for a couple of public/private key
+ *
+ * @property publicKey The public part of the key pair
+ * @property privateKey The private part of the key pair
+ */
 class AsymmetricKeyPair(
     val publicKey: DRPublicKey,
     val privateKey: DRPrivateKey,

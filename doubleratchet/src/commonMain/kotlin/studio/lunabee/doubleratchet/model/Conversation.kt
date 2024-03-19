@@ -16,6 +16,19 @@
 
 package studio.lunabee.doubleratchet.model
 
+/**
+ * State of a conversation containing states variables required to run the double ratchet algorithm from each party.
+ *
+ * @property id The unique and local identifier of a conversation
+ * @property personalKeyPair The sending key pair, formally DHs
+ * @property rootKey The current root key, formally RK
+ * @property sendingChainKey The current chain key for sending, formally CKs
+ * @property receiveChainKey The current chain key for receiving, formally CKr
+ * @property lastContactPublicKey The last known public key of the emitter, formally DHr
+ * @property nextMessageNumber The number of the next message to be sent, formally Ns+1
+ * @property nextSequenceNumber Number of messages in the previous sequence of messages, formally PN
+ * @property receivedLastMessageNumber The number of the last message received. Used to know if some messages have been skipped.
+ */
 class Conversation(
     val id: DoubleRatchetUUID,
     personalKeyPair: AsymmetricKeyPair,
@@ -44,6 +57,9 @@ class Conversation(
     var receivedLastMessageNumber: Int? = receivedLastMessageNumber
         internal set
 
+    /**
+     * Erase sensitive in-memory data
+     */
     fun destroy() {
         personalKeyPair.privateKey.destroy()
         rootKey?.destroy()
