@@ -26,6 +26,8 @@ actual class DoubleRatchetUUID(val uuid: UUID) {
     }
 
     override fun hashCode(): Int = uuid.toString().hashCode()
+
+    actual constructor(string: String) : this(uuid = UUID.fromString(string))
 }
 
 actual fun createRandomUUID(): DoubleRatchetUUID {
