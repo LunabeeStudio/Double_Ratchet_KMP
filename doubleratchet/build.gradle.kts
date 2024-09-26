@@ -81,4 +81,8 @@ kotlin {
             iosSimulatorArm64Test.dependsOn(this)
         }
     }
+
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
 }

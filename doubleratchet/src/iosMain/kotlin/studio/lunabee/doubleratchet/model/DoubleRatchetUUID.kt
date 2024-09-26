@@ -27,7 +27,14 @@ actual class DoubleRatchetUUID(val uuid: NSUUID) {
 
     override fun hashCode(): Int = uuid.UUIDString().hashCode()
 
-    actual constructor(string: String) : this(uuid = NSUUID(string))
+    actual companion object {
+        @Throws(IllegalArgumentException::class)
+        actual operator fun invoke(string: String): DoubleRatchetUUID {
+            val uuid = kotlin.runCatching { NSUUID(string) }.getOrNull()
+                ?: throw IllegalArgumentException("Invalid UUID string")
+            return DoubleRatchetUUID(uuid = uuid)
+        }
+    }
 }
 
 actual fun createRandomUUID(): DoubleRatchetUUID = DoubleRatchetUUID(NSUUID())

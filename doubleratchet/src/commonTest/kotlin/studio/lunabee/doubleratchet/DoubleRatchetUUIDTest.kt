@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2023 Lunabee Studio
+ * Copyright (c) 2024 Lunabee Studio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 
-package studio.lunabee.doubleratchet.model
+package studio.lunabee.doubleratchet
 
-expect class DoubleRatchetUUID {
-    fun uuidString(): String
+import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
+import kotlin.test.Test
 
-    companion object {
-        @Throws(IllegalArgumentException::class)
-        operator fun invoke(string: String): DoubleRatchetUUID
+class DoubleRatchetUUIDTest {
+    @Test
+    fun `construct UUID from string test`() {
+        val uuidString = "d5ef2632-1be1-4952-a3bd-c020cfda5fcd"
+        assertDoesNotThrow { DoubleRatchetUUID(uuidString) }
+
+        val nonUuidString = "non-uuid-string"
+        assertThrows<IllegalArgumentException> { DoubleRatchetUUID(nonUuidString) }
     }
 }
-
-expect fun createRandomUUID(): DoubleRatchetUUID
