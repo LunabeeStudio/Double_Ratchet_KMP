@@ -16,13 +16,10 @@
 
 package studio.lunabee.doubleratchet.model
 
-import kotlin.jvm.JvmInline
-
 /**
  * Diffie Hellman generated secret using elliptic curve secp256r1
  */
-@JvmInline
-value class DRSharedSecret(override val value: ByteArray) : DRCriticalKey {
+data class DRSharedSecret(override val value: ByteArray) : DRCriticalKey {
     companion object {
         fun empty(length: Int): DRSharedSecret = DRSharedSecret(ByteArray(length))
     }

@@ -22,7 +22,7 @@ plugins {
 
 group = "studio.lunabee.doubleratchet"
 description = "Kotlin multiplatform implementation of double ratchet algorithm"
-version = "0.1.4"
+version = "0.1.4-uuid-error-SNAPSHOT"
 
 kotlin {
     jvm {
@@ -80,5 +80,9 @@ kotlin {
             iosArm64Test.dependsOn(this)
             iosSimulatorArm64Test.dependsOn(this)
         }
+    }
+
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
     }
 }

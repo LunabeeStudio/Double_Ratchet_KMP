@@ -16,10 +16,7 @@
 
 package studio.lunabee.doubleratchet.model
 
-import kotlin.jvm.JvmInline
-
-@JvmInline
-value class DRMessageKey(override val value: ByteArray) : DRCriticalKey {
+data class DRMessageKey(override val value: ByteArray) : DRCriticalKey {
 
     companion object {
         fun empty(length: Int): DRMessageKey = DRMessageKey(ByteArray(length))
