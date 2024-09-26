@@ -16,10 +16,7 @@
 
 package studio.lunabee.doubleratchet.model
 
-import kotlin.jvm.JvmInline
-
-@JvmInline
-value class DRMessageKeyId private constructor(val value: String) {
+data class DRMessageKeyId private constructor(val value: String) {
 
     internal constructor(
         conversation: DoubleRatchetUUID,

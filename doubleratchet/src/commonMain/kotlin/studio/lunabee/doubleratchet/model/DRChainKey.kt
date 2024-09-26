@@ -16,15 +16,12 @@
 
 package studio.lunabee.doubleratchet.model
 
-import kotlin.jvm.JvmInline
-
 /**
  * Chain key used for sending (CKs) and receiving (CKr)
  *
  * @see <a href="https://signal.org/docs/specifications/doubleratchet/#state-variables">State variables</a>
  */
-@JvmInline
-value class DRChainKey(override val value: ByteArray) : DRCriticalKey {
+data class DRChainKey(override val value: ByteArray) : DRCriticalKey {
     companion object {
         fun empty(length: Int): DRChainKey = DRChainKey(ByteArray(length))
     }

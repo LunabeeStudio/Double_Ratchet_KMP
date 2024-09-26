@@ -19,6 +19,8 @@ package studio.lunabee.doubleratchet.model
 expect class DoubleRatchetUUID {
     fun uuidString(): String
 
+    fun toByteArray(): ByteArray
+
     companion object {
         @Throws(IllegalArgumentException::class)
         operator fun invoke(string: String): DoubleRatchetUUID
@@ -26,3 +28,5 @@ expect class DoubleRatchetUUID {
 }
 
 expect fun createRandomUUID(): DoubleRatchetUUID
+
+expect fun ByteArray.toDoubleRatchetUUID(): DoubleRatchetUUID

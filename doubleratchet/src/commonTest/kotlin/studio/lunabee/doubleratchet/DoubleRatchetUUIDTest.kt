@@ -17,12 +17,32 @@
 package studio.lunabee.doubleratchet
 
 import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
+import studio.lunabee.doubleratchet.model.toDoubleRatchetUUID
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class DoubleRatchetUUIDTest {
+    private val uuidString = "db24c76f-fef6-4624-87cd-f9cf6023beaf"
+    private val byteHexString = "db24c76ffef6462487cdf9cf6023beaf"
+
+    /**
+     * to assert that the byteArray conversion lead to same result on jvm and on ios
+     */
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun toByteArray() {
+        val uuid = DoubleRatchetUUID(uuidString)
+        assertEquals(expected = uuidString, uuid.uuidString())
+
+        val byteArray = uuid.toByteArray()
+        assertEquals(expected = byteHexString, actual = byteArray.toHexString())
+        val convertedUUID = byteArray.toDoubleRatchetUUID()
+        assertEquals(expected = uuid, actual = convertedUUID)
+    }
+
     @Test
     fun `construct UUID from string test`() {
-        val uuidString = "d5ef2632-1be1-4952-a3bd-c020cfda5fcd"
+        val uuidString = uuidString
         assertDoesNotThrow { DoubleRatchetUUID(uuidString) }
 
         val nonUuidString = "non-uuid-string"

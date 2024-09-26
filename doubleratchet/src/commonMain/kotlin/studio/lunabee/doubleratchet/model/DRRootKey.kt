@@ -16,15 +16,12 @@
 
 package studio.lunabee.doubleratchet.model
 
-import kotlin.jvm.JvmInline
-
 /**
  * Root key used to derive chain key
  *
  * @see <a href="https://signal.org/docs/specifications/doubleratchet/#state-variables">State variables</a>
  */
-@JvmInline
-value class DRRootKey(override val value: ByteArray) : DRCriticalKey {
+data class DRRootKey(override val value: ByteArray) : DRCriticalKey {
     companion object {
         fun empty(length: Int): DRRootKey = DRRootKey(ByteArray(length))
     }

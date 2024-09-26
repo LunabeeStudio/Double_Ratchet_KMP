@@ -16,6 +16,7 @@
 
 package studio.lunabee.doubleratchet.model
 
+import java.nio.ByteBuffer
 import java.util.UUID
 
 actual class DoubleRatchetUUID(val uuid: UUID) {
@@ -33,8 +34,25 @@ actual class DoubleRatchetUUID(val uuid: UUID) {
             return DoubleRatchetUUID(uuid = UUID.fromString(string))
         }
     }
+
+    override fun toString(): String = uuidString()
+
+    actual fun toByteArray(): ByteArray {
+        val bytes = ByteArray(16)
+        val buffer = ByteBuffer.wrap(bytes)
+        buffer.putLong(uuid.mostSignificantBits)
+        buffer.putLong(uuid.leastSignificantBits)
+        return buffer.array()
+    }
 }
 
 actual fun createRandomUUID(): DoubleRatchetUUID {
     return DoubleRatchetUUID(uuid = UUID.randomUUID())
+}
+
+actual fun ByteArray.toDoubleRatchetUUID(): DoubleRatchetUUID {
+    val buffer = ByteBuffer.wrap(this)
+    val firstLong = buffer.long
+    val secondLong = buffer.long
+    return DoubleRatchetUUID(UUID(firstLong, secondLong))
 }
