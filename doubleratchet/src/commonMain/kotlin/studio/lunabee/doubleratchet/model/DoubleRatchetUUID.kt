@@ -23,7 +23,7 @@ expect class DoubleRatchetUUID {
 
     companion object {
         @Throws(IllegalArgumentException::class)
-        operator fun invoke(string: String): DoubleRatchetUUID
+        fun fromString(uuidString: String): DoubleRatchetUUID
     }
 }
 

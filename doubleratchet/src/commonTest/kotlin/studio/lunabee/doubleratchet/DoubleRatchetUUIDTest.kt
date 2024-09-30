@@ -26,12 +26,12 @@ class DoubleRatchetUUIDTest {
     private val byteHexString = "db24c76ffef6462487cdf9cf6023beaf"
 
     /**
-     * to assert that the byteArray conversion lead to same result on jvm and on ios
+     * Asserts that the byteArray conversion lead to same result on jvm and on ios
      */
     @OptIn(ExperimentalStdlibApi::class)
     @Test
-    fun toByteArray() {
-        val uuid = DoubleRatchetUUID(uuidString)
+    fun `convert to byte array test`() {
+        val uuid = DoubleRatchetUUID.fromString(uuidString)
         assertEquals(expected = uuidString, uuid.uuidString())
 
         val byteArray = uuid.toByteArray()
@@ -42,10 +42,9 @@ class DoubleRatchetUUIDTest {
 
     @Test
     fun `construct UUID from string test`() {
-        val uuidString = uuidString
-        assertDoesNotThrow { DoubleRatchetUUID(uuidString) }
+        assertDoesNotThrow { DoubleRatchetUUID.fromString(uuidString) }
 
         val nonUuidString = "non-uuid-string"
-        assertThrows<IllegalArgumentException> { DoubleRatchetUUID(nonUuidString) }
+        assertThrows<IllegalArgumentException> { DoubleRatchetUUID.fromString(nonUuidString) }
     }
 }
