@@ -58,8 +58,8 @@ actual class DoubleRatchetUUID(val uuid: NSUUID) {
 
     actual companion object {
         @Throws(IllegalArgumentException::class)
-        actual operator fun invoke(string: String): DoubleRatchetUUID {
-            val uuid = kotlin.runCatching { NSUUID(string) }.getOrNull()
+        actual fun fromString(uuidString: String): DoubleRatchetUUID {
+            val uuid = kotlin.runCatching { NSUUID(uuidString) }.getOrNull()
                 ?: throw IllegalArgumentException("Invalid UUID string")
             return DoubleRatchetUUID(uuid = uuid)
         }
@@ -95,7 +95,7 @@ actual fun ByteArray.toDoubleRatchetUUID(): DoubleRatchetUUID {
             characters[charIndex++] = '-'
         }
     }
-    return DoubleRatchetUUID(characters.concatToString())
+    return DoubleRatchetUUID.fromString(characters.concatToString())
 }
 
 /**

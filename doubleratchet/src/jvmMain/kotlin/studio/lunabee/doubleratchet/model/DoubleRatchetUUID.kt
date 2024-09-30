@@ -30,8 +30,8 @@ actual class DoubleRatchetUUID(val uuid: UUID) {
 
     actual companion object {
         @Throws(IllegalArgumentException::class)
-        actual operator fun invoke(string: String): DoubleRatchetUUID {
-            return DoubleRatchetUUID(uuid = UUID.fromString(string))
+        actual fun fromString(uuidString: String): DoubleRatchetUUID {
+            return DoubleRatchetUUID(uuid = UUID.fromString(uuidString))
         }
     }
 
