@@ -16,6 +16,7 @@
 
 package studio.lunabee.doubleratchet.model
 
+@ConsistentCopyVisibility
 data class DRMessageKeyId private constructor(val value: String) {
 
     internal constructor(
