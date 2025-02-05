@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import org.gradle.configurationcache.extensions.capitalized
 import java.net.URI
+import java.util.Locale
 
 plugins {
     `maven-publish`
@@ -49,23 +49,10 @@ fun PublishingExtension.setupMavenRepository() {
  */
 fun PublishingExtension.setupPublication() {
     publications {
-        create<MavenPublication>(project.name) {
-            setProjectDetails()
+        publications.withType<MavenPublication> {
             setPom()
         }
     }
-}
-
-/**
- * Set project details:
- * - groupId will be [ProjectConfig.GROUP_ID]
- * - artifactId will take the name of the current [project]
- * - version will be set in each submodule gradle file
- */
-fun MavenPublication.setProjectDetails() {
-    groupId = ProjectConfig.GROUP_ID
-    artifactId = project.name
-    version = project.version.toString()
 }
 
 /**
@@ -77,10 +64,15 @@ fun MavenPublication.setPom() {
         description.set(project.description)
         url.set(ProjectConfig.LIBRARY_URL)
 
+        organization {
+            name.set("Lunabee Studio")
+            url.set("https://www.lunabee.studio")
+        }
+
         scm {
-            connection.set("git@github.com:LunabeeStudio/Double_Ratchet_KMM.git")
-            developerConnection.set("git@github.com:LunabeeStudio/Double_Ratchet_KMM.git")
-            url.set("https://github.com/LunabeeStudio/Double_Ratchet_KMM")
+            connection.set("git@github.com:LunabeeStudio/Double_Ratchet_KMP.git")
+            developerConnection.set("git@github.com:LunabeeStudio/Double_Ratchet_KMP.git")
+            url.set("https://github.com/LunabeeStudio/Double_Ratchet_KMP")
         }
 
         developers {
@@ -90,24 +82,7 @@ fun MavenPublication.setPom() {
                 email.set("publisher@lunabee.com")
             }
         }
-
-        withXml {
-            asNode().appendNode("dependencies").apply {
-                fun Dependency.write(scope: String) = appendNode("dependency").apply {
-                    appendNode("groupId", group)
-                    appendNode("artifactId", name)
-                    version?.let { appendNode("version", version) }
-                    appendNode("scope", scope)
-                }
-
-                configurations["api"].dependencies.forEach { dependency ->
-                    dependency.write("implementation")
-                }
-
-                configurations["implementation"].dependencies.forEach { dependency ->
-                    dependency.write("runtime")
-                }
-            }
-        }
     }
 }
+
+private fun String.capitalized(): String = if (this.isEmpty()) this else this[0].titlecase(Locale.US) + this.substring(1)
