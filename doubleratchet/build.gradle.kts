@@ -21,7 +21,7 @@ plugins {
 
 group = "studio.lunabee.doubleratchet"
 description = "Kotlin multiplatform implementation of double ratchet algorithm"
-version = "1.0.0"
+version = "1.1.0"
 
 kotlin {
     jvm()
