@@ -16,7 +16,6 @@
 
 plugins {
     alias(libs.plugins.kmp)
-    id("java-library")
     `lunabee-publish`
 }
 
