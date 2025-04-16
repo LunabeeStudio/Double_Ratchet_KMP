@@ -19,9 +19,9 @@ plugins {
     `lunabee-publish`
 }
 
-group = "studio.lunabee.doubleratchet"
+group = ProjectConfig.GROUP_ID
 description = "Kotlin multiplatform implementation of double ratchet algorithm"
-version = "1.1.0"
+version = "1.1.1"
 
 kotlin {
     jvm()
@@ -50,5 +50,14 @@ kotlin {
 
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+}
+
+java {
+    sourceCompatibility = ProjectConfig.JDK_VERSION
+    targetCompatibility = ProjectConfig.JDK_VERSION
+
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(ProjectConfig.JDK_VERSION.toString()))
     }
 }
