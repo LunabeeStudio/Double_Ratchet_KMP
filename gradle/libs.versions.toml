@@ -15,7 +15,7 @@ kotlinx-coroutines = "1.10.2"
 
 junit-jupiter = "5.13.0"
 
-bouncycastle = "1.80"
+bouncycastle = "1.81"
 
 detekt = "1.23.8"
 
