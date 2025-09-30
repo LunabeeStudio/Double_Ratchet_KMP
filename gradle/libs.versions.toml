@@ -13,7 +13,7 @@ kotlin = "2.2.20"
 
 kotlinx-coroutines = "1.10.2"
 
-junit-jupiter = "5.13.4"
+junit-jupiter = "6.0.0"
 
 bouncycastle = "1.82"
 
