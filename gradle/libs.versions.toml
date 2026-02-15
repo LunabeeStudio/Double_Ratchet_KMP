@@ -9,13 +9,13 @@ kmp = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 
 [versions]
 
-kotlin = "2.2.20"
+kotlin = "2.3.10"
 
 kotlinx-coroutines = "1.10.2"
 
-junit-jupiter = "5.13.4"
+junit-jupiter = "5.14.3"
 
-bouncycastle = "1.82"
+bouncycastle = "1.83"
 
 detekt = "1.23.8"
 
