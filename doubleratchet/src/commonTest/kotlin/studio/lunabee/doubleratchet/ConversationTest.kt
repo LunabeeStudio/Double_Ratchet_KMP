@@ -22,7 +22,6 @@ import studio.lunabee.doubleratchet.model.DRChainKey
 import studio.lunabee.doubleratchet.model.DRRootKey
 import studio.lunabee.doubleratchet.model.DRSharedSecret
 import studio.lunabee.doubleratchet.model.DoubleRatchetError
-import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.model.InvitationData
 import kotlin.random.Random
 import kotlin.test.Test
@@ -30,6 +29,7 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.uuid.Uuid
 
 class ConversationTest {
 
@@ -168,7 +168,7 @@ class ConversationTest {
             doubleRatchetKeyRepository = getRepository(),
         )
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInit)
-        val aliceToBobConversationId: DoubleRatchetUUID =
+        val aliceToBobConversationId: Uuid =
             engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey, sharedInit)
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
         val receivedBob1 = engineBob.getReceiveKey(aliceMessage1.messageHeader, bobToAliceInvitation.conversationId)
@@ -192,7 +192,7 @@ class ConversationTest {
             doubleRatchetKeyRepository = getRepository(),
         )
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInitA)
-        val aliceToBobConversationId: DoubleRatchetUUID =
+        val aliceToBobConversationId: Uuid =
             engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey, sharedInitB)
 
         val aliceMessage1 = engineAlice.getSendData(conversationId = aliceToBobConversationId)
@@ -234,7 +234,7 @@ class ConversationTest {
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInit)
 
         // Alice Accept Bob invitation
-        val aliceToBobConversationId: DoubleRatchetUUID =
+        val aliceToBobConversationId: Uuid =
             engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey, sharedInit)
 
         // Alice send a message to Bob
@@ -284,7 +284,7 @@ class ConversationTest {
         val bobToAliceInvitation: InvitationData = engineBob.createInvitation(sharedInit)
 
         // Alice Accept Bob invitation
-        val aliceToBobConversationId: DoubleRatchetUUID =
+        val aliceToBobConversationId: Uuid =
             engineAlice.createNewConversationFromInvitation(bobToAliceInvitation.publicKey, sharedInit)
 
         // Alice send a message to Bob

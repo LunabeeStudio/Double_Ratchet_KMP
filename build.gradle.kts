@@ -61,3 +61,7 @@ tasks.detekt.configure {
         html.outputLocation.set(file("${layout.buildDirectory.asFile.get().path}/reports/detekt/detekt-report.html"))
     }
 }
+
+tasks.wrapper {
+    distributionType = Wrapper.DistributionType.ALL
+}

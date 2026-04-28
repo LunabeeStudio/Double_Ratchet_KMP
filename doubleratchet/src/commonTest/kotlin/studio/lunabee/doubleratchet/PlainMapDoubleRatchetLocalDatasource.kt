@@ -24,8 +24,8 @@ import studio.lunabee.doubleratchet.model.DRMessageKeyId
 import studio.lunabee.doubleratchet.model.DRPrivateKey
 import studio.lunabee.doubleratchet.model.DRPublicKey
 import studio.lunabee.doubleratchet.model.DRRootKey
-import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.storage.DoubleRatchetLocalDatasource
+import kotlin.uuid.Uuid
 
 /**
  * Implementation provided for testing,
@@ -64,7 +64,7 @@ class PlainMapDoubleRatchetLocalDatasource(
         )
     }
 
-    override suspend fun getConversation(id: DoubleRatchetUUID): Conversation? = if (id == conversation?.id) {
+    override suspend fun getConversation(id: Uuid): Conversation? = if (id == conversation?.id) {
         Conversation(
             id = conversation!!.id,
             personalKeyPair = AsymmetricKeyPair(

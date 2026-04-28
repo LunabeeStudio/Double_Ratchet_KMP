@@ -20,7 +20,7 @@ import studio.lunabee.doubleratchet.model.Conversation
 
 fun Conversation.print(): String {
     return "Conversation(\n" +
-        "\tid=${id.uuidString()}\n" +
+        "\tid=${id.toHexDashString()}\n" +
         "\tpersonalKeyPair=(\n" +
         "\t\tprivate=${personalKeyPair.privateKey.value.contentHashCode()}\n" +
         "\t\tpublic=${personalKeyPair.publicKey.value.contentHashCode()}\n" +

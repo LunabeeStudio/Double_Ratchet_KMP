@@ -16,8 +16,10 @@
 
 package studio.lunabee.doubleratchet.model
 
+import kotlin.uuid.Uuid
+
 class Conversation(
-    val id: DoubleRatchetUUID,
+    val id: Uuid,
     personalKeyPair: AsymmetricKeyPair,
     messageNumber: Int = 0,
     sequenceNumber: Int = 0,
@@ -53,14 +55,14 @@ class Conversation(
     }
 
     companion object {
-        fun createNew(id: DoubleRatchetUUID, personalKeyPair: AsymmetricKeyPair, initialRootKey: DRRootKey): Conversation = Conversation(
+        fun createNew(id: Uuid, personalKeyPair: AsymmetricKeyPair, initialRootKey: DRRootKey): Conversation = Conversation(
             id = id,
             personalKeyPair = personalKeyPair,
             rootKey = initialRootKey,
         )
 
         fun createFromInvitation(
-            id: DoubleRatchetUUID,
+            id: Uuid,
             personalKeyPair: AsymmetricKeyPair,
             rootKey: DRRootKey,
             sendingChainKey: DRChainKey,

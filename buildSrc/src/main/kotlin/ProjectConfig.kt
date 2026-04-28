@@ -20,5 +20,5 @@ object ProjectConfig {
     const val LIBRARY_URL: String = "https://github.com/LunabeeStudio/Double_Ratchet_KMP"
     const val GROUP_ID: String = "studio.lunabee.doubleratchet"
 
-    val JDK_VERSION: JavaVersion = JavaVersion.VERSION_17
+    val JDK_VERSION: JavaVersion = JavaVersion.VERSION_21
 }

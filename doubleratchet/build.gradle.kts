@@ -21,7 +21,7 @@ plugins {
 
 group = ProjectConfig.GROUP_ID
 description = "Kotlin multiplatform implementation of double ratchet algorithm"
-version = "1.1.1"
+version = "1.2.0"
 
 kotlin {
     jvm()
@@ -50,6 +50,7 @@ kotlin {
 
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
+        freeCompilerArgs.add("-opt-in=kotlin.uuid.ExperimentalUuidApi")
     }
 }
 

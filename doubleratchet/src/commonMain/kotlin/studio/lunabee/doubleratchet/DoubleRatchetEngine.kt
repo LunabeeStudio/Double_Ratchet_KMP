@@ -26,12 +26,11 @@ import studio.lunabee.doubleratchet.model.DRPublicKey
 import studio.lunabee.doubleratchet.model.DRRootKey
 import studio.lunabee.doubleratchet.model.DRSharedSecret
 import studio.lunabee.doubleratchet.model.DoubleRatchetError
-import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
 import studio.lunabee.doubleratchet.model.InvitationData
 import studio.lunabee.doubleratchet.model.MessageHeader
 import studio.lunabee.doubleratchet.model.SendMessageData
-import studio.lunabee.doubleratchet.model.createRandomUUID
 import studio.lunabee.doubleratchet.storage.DoubleRatchetLocalDatasource
+import kotlin.uuid.Uuid
 
 /**
  * Core engine
@@ -51,7 +50,7 @@ class DoubleRatchetEngine(
      */
     suspend fun createInvitation(
         sharedSalt: DRSharedSecret,
-        newConversationId: DoubleRatchetUUID = createRandomUUID(),
+        newConversationId: Uuid = Uuid.random(),
     ): InvitationData {
         if (sharedSalt.value.size != doubleRatchetKeyRepository.rootKeyByteSize) {
             throw DoubleRatchetError(DoubleRatchetError.Type.SharedSaltWrongSize)
@@ -81,8 +80,8 @@ class DoubleRatchetEngine(
     suspend fun createNewConversationFromInvitation(
         contactPublicKey: DRPublicKey,
         sharedSalt: DRSharedSecret,
-        newConversationId: DoubleRatchetUUID = createRandomUUID(),
-    ): DoubleRatchetUUID {
+        newConversationId: Uuid = Uuid.random(),
+    ): Uuid {
         if (sharedSalt.value.size != doubleRatchetKeyRepository.rootKeyByteSize) {
             throw DoubleRatchetError(DoubleRatchetError.Type.SharedSaltWrongSize)
         }
@@ -106,7 +105,7 @@ class DoubleRatchetEngine(
      *
      * @param conversationId The id of the associated conversation
      */
-    suspend fun getSendData(conversationId: DoubleRatchetUUID): SendMessageData {
+    suspend fun getSendData(conversationId: Uuid): SendMessageData {
         val conversation = doubleRatchetLocalDatasource.getConversation(conversationId)
             ?: throw DoubleRatchetError(DoubleRatchetError.Type.ConversationNotFound)
         val sendingChainKey = conversation.sendingChainKey
@@ -145,7 +144,7 @@ class DoubleRatchetEngine(
      */
     suspend fun getReceiveKey(
         messageHeader: MessageHeader,
-        conversationId: DoubleRatchetUUID,
+        conversationId: Uuid,
     ): DRMessageKey {
         val conversation = doubleRatchetLocalDatasource.getConversation(conversationId)
             ?: throw DoubleRatchetError(DoubleRatchetError.Type.ConversationNotFound)
@@ -167,7 +166,7 @@ class DoubleRatchetEngine(
 
     private suspend fun popStoredMessageKey(
         messageHeader: MessageHeader,
-        conversationId: DoubleRatchetUUID,
+        conversationId: Uuid,
     ): DRMessageKey {
         val messageKeyId = DRMessageKeyId(conversationId, messageHeader.messageNumber)
         return doubleRatchetLocalDatasource.popMessageKey(messageKeyId)

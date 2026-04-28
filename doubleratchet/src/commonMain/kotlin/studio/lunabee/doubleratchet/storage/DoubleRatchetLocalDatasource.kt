@@ -19,14 +19,14 @@ package studio.lunabee.doubleratchet.storage
 import studio.lunabee.doubleratchet.model.Conversation
 import studio.lunabee.doubleratchet.model.DRMessageKey
 import studio.lunabee.doubleratchet.model.DRMessageKeyId
-import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
+import kotlin.uuid.Uuid
 
 /**
  * Used by the doubleRatchet engine to store and retrieve the keys it needs.
  */
 interface DoubleRatchetLocalDatasource {
     suspend fun saveOrUpdateConversation(conversation: Conversation)
-    suspend fun getConversation(id: DoubleRatchetUUID): Conversation?
+    suspend fun getConversation(id: Uuid): Conversation?
     suspend fun saveMessageKey(id: DRMessageKeyId, key: DRMessageKey)
 
     /**

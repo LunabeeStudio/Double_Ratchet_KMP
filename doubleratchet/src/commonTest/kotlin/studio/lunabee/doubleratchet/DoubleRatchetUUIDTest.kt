@@ -16,10 +16,9 @@
 
 package studio.lunabee.doubleratchet
 
-import studio.lunabee.doubleratchet.model.DoubleRatchetUUID
-import studio.lunabee.doubleratchet.model.toDoubleRatchetUUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.uuid.Uuid
 
 class DoubleRatchetUUIDTest {
     private val uuidString = "db24c76f-fef6-4624-87cd-f9cf6023beaf"
@@ -31,20 +30,20 @@ class DoubleRatchetUUIDTest {
     @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun `convert to byte array test`() {
-        val uuid = DoubleRatchetUUID.fromString(uuidString)
-        assertEquals(expected = uuidString, uuid.uuidString())
+        val uuid = Uuid.parse(uuidString)
+        assertEquals(expected = uuidString, uuid.toHexDashString())
 
         val byteArray = uuid.toByteArray()
         assertEquals(expected = byteHexString, actual = byteArray.toHexString())
-        val convertedUUID = byteArray.toDoubleRatchetUUID()
+        val convertedUUID = Uuid.fromByteArray(byteArray)
         assertEquals(expected = uuid, actual = convertedUUID)
     }
 
     @Test
     fun `construct UUID from string test`() {
-        assertDoesNotThrow { DoubleRatchetUUID.fromString(uuidString) }
+        assertDoesNotThrow { Uuid.parse(uuidString) }
 
         val nonUuidString = "non-uuid-string"
-        assertThrows<IllegalArgumentException> { DoubleRatchetUUID.fromString(nonUuidString) }
+        assertThrows<IllegalArgumentException> { Uuid.parse(nonUuidString) }
     }
 }

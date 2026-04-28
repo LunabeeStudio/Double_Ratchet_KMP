@@ -16,7 +16,9 @@
 
 package studio.lunabee.doubleratchet.model
 
+import kotlin.uuid.Uuid
+
 class InvitationData(
-    val conversationId: DoubleRatchetUUID,
+    val conversationId: Uuid,
     val publicKey: DRPublicKey,
 )

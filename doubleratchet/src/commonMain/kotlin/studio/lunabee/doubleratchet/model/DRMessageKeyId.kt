@@ -16,13 +16,15 @@
 
 package studio.lunabee.doubleratchet.model
 
+import kotlin.uuid.Uuid
+
 @ConsistentCopyVisibility
 data class DRMessageKeyId private constructor(val value: String) {
 
     internal constructor(
-        conversation: DoubleRatchetUUID,
+        conversation: Uuid,
         messageNumber: Int,
-    ) : this("${conversation.uuidString()}$Separator$messageNumber")
+    ) : this("${conversation.toHexDashString()}$Separator$messageNumber")
 
     val conversationId: String
         get() = value.substringBefore(Separator)
