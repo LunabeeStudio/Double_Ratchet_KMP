@@ -34,6 +34,7 @@ kotlin {
             baseName = "doubleratchet"
         }
     }
+    macosArm64()
 
     sourceSets {
         commonTest.dependencies {
