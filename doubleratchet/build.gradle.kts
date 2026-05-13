@@ -21,7 +21,7 @@ plugins {
 
 group = ProjectConfig.GROUP_ID
 description = "Kotlin multiplatform implementation of double ratchet algorithm"
-version = "1.2.0"
+version = "1.3.0"
 
 kotlin {
     jvm()
